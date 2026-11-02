@@ -18,4 +18,4 @@ Download FER-2013:
 kaggle datasets download -d msambare/fer2013 -p data/fer2013 --unzip
 ```
 
-RAF-DB: http://www.whdeng.cn/raf/model1.html — email the authors for the password.
+RAF-DB: http://www.whdeng.cn/RAF/model1.html (URL is case-sensitive). Email Shan Li from a university account for the password. Licence: non-commercial, no redistribution outside the team — keep any Kaggle copy private.

@@ -43,14 +43,15 @@ All code uses one label order (`src/datasets.py`):
 
 ## Plan and owners
 
-| Week | Phase | Owner |
-|---|---|---|
-| 1 | Setup, data, EDA, label mapping | Neeraj |
-| 2 | CNN baseline | Neeraj |
-| 3 | ResNet transfer learning | Rakshita |
-| 4 | ViT fine-tuning (Kaggle/Colab) | Pawan |
-| 5 | Cross-dataset test + subgroup audit + saliency | Rakshita (audit), Pawan (saliency, cross-dataset) |
-| 6 | Report, slides, demo | All |
+Deadline: **22 Nov 2026**. Tasks are tracked as GitHub Issues, one milestone per phase.
+
+| Dates | Phase | Neeraj | Rakshita | Pawan |
+|---|---|---|---|---|
+| 2-5 Nov | Data & baselines | RAF-DB access, EDA, CNN baseline | ResNet-18 baseline | ViT-S baseline |
+| 6-9 Nov | Tuning | CNN experiments | ResNet experiments | ViT experiments |
+| 10-14 Nov | Research | Cross-dataset test | Subgroup bias audit | Grad-CAM attention analysis |
+| 15-17 Nov | Extension & results | Per-class analysis, README results | Mitigation experiment | Comparison table, demo |
+| 18-21 Nov | Report & slides | Intro, related work, data | Method, bias results, slides | Attention results, conclusion |
 
 ## References
 

@@ -9,3 +9,6 @@ data/*
 results/**/*.pt
 results/**/*.pth
 wandb/
+
+# Kaggle output downloads
+results_*.zip

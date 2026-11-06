@@ -3,7 +3,7 @@ data:
   fer2013_root: /kaggle/input/datasets/msambare/fer2013
   img_size: 48
   num_workers: 2
-  rafdb_root: /kaggle/input/rafdb
+  rafdb_root: /kaggle/input/datasets/neer768/rafdb-basic
   val_frac: 0.1
 model:
   name: cnn

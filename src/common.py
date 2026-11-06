@@ -43,7 +43,8 @@ def get_frames(cfg, dataset):
 
 def make_loader(cfg, df, train):
     d = cfg["data"]
-    tf = build_transforms(d["img_size"], d["channels"], train)
+    tf = build_transforms(d["img_size"], d["channels"], train,
+                          augment=d.get("augment", True), erasing=d.get("random_erasing", 0.25))
     return DataLoader(
         FrameDataset(df, tf),
         batch_size=cfg["train"]["batch_size"],
@@ -54,12 +55,18 @@ def make_loader(cfg, df, train):
     )
 
 
+def model_kwargs(m):
+    """Optional architecture settings from the config's model section."""
+    return {k: m[k] for k in ("dropout", "block_dropout") if k in m}
+
+
 def load_run(run_dir, device):
     """Rebuild a trained model from results/<run>/ (config.yaml + best.pt)."""
     run_dir = Path(run_dir)
     cfg = load_config(run_dir / "config.yaml")
     m = cfg["model"]
-    model = build_model(m["name"], m["num_classes"], pretrained=False, in_channels=cfg["data"]["channels"])
+    model = build_model(m["name"], m["num_classes"], pretrained=False, in_channels=cfg["data"]["channels"],
+                        **model_kwargs(m))
     state = torch.load(run_dir / "best.pt", map_location=device)
     model.load_state_dict(state["model"])
     return model.to(device).eval(), cfg

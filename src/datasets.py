@@ -22,10 +22,14 @@ RAFDB_AGE = {0: "0-3", 1: "4-19", 2: "20-39", 3: "40-69", 4: "70+"}
 IMAGENET_MEAN, IMAGENET_STD = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225)
 
 
-def build_transforms(img_size: int, channels: int, train: bool):
-    """Grayscale 1-channel for the scratch CNN, 3-channel ImageNet-normalised for pretrained models."""
+def build_transforms(img_size: int, channels: int, train: bool, augment: bool = True, erasing: float = 0.25):
+    """Grayscale 1-channel for the scratch CNN, 3-channel ImageNet-normalised for pretrained models.
+
+    augment=False turns off flip/affine/jitter; erasing is the RandomErasing probability (0 = off).
+    """
+    train_aug = train and augment
     ops = [transforms.Grayscale(num_output_channels=channels), transforms.Resize((img_size, img_size))]
-    if train:
+    if train_aug:
         ops += [
             transforms.RandomHorizontalFlip(),
             transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
@@ -36,8 +40,8 @@ def build_transforms(img_size: int, channels: int, train: bool):
         ops.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD))
     else:
         ops.append(transforms.Normalize((0.5,), (0.5,)))
-    if train:
-        ops.append(transforms.RandomErasing(p=0.25))
+    if train_aug and erasing > 0:
+        ops.append(transforms.RandomErasing(p=erasing))
     return transforms.Compose(ops)
 
 

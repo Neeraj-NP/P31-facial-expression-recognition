@@ -7,14 +7,14 @@ from torchvision import models
 class SimpleCNN(nn.Module):
     """VGG-style CNN for 48x48 grayscale faces (~5M params)."""
 
-    def __init__(self, num_classes=7, in_channels=1, dropout=0.4):
+    def __init__(self, num_classes=7, in_channels=1, dropout=0.4, block_dropout=0.25):
         super().__init__()
 
         def block(cin, cout):
             return nn.Sequential(
                 nn.Conv2d(cin, cout, 3, padding=1), nn.BatchNorm2d(cout), nn.ReLU(inplace=True),
                 nn.Conv2d(cout, cout, 3, padding=1), nn.BatchNorm2d(cout), nn.ReLU(inplace=True),
-                nn.MaxPool2d(2), nn.Dropout(0.25),
+                nn.MaxPool2d(2), nn.Dropout(block_dropout),
             )
 
         self.features = nn.Sequential(
@@ -32,7 +32,8 @@ class SimpleCNN(nn.Module):
 
 def build_model(name, num_classes=7, pretrained=True, **kwargs):
     if name == "cnn":
-        return SimpleCNN(num_classes, in_channels=kwargs.get("in_channels", 1))
+        return SimpleCNN(num_classes, in_channels=kwargs.get("in_channels", 1),
+                         dropout=kwargs.get("dropout", 0.4), block_dropout=kwargs.get("block_dropout", 0.25))
     if name in ("resnet18", "resnet50"):
         weights = "DEFAULT" if pretrained else None
         m = getattr(models, name)(weights=weights)

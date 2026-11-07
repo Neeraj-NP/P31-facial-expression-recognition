@@ -16,7 +16,7 @@ import yaml
 from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 
-from .common import ROOT, get_device, get_frames, load_config, make_loader, seed_everything
+from .common import ROOT, get_device, get_frames, load_config, make_loader, model_kwargs, seed_everything
 from .models import build_model
 
 
@@ -83,7 +83,7 @@ def main():
 
     m = cfg["model"]
     model = build_model(m["name"], m["num_classes"], m.get("pretrained", True),
-                        in_channels=cfg["data"]["channels"]).to(device)
+                        in_channels=cfg["data"]["channels"], **model_kwargs(m)).to(device)
 
     weight = class_weights(frames["train"]["label"].values, m["num_classes"]).to(device) \
         if t.get("class_weights") else None

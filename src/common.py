@@ -41,14 +41,16 @@ def get_frames(cfg, dataset):
     raise ValueError(dataset)
 
 
-def make_loader(cfg, df, train):
+def make_loader(cfg, df, train, sampler=None):
+    """sampler overrides shuffling, e.g. a WeightedRandomSampler for subgroup-balanced training."""
     d = cfg["data"]
     tf = build_transforms(d["img_size"], d["channels"], train,
                           augment=d.get("augment", True), erasing=d.get("random_erasing", 0.25))
     return DataLoader(
         FrameDataset(df, tf),
         batch_size=cfg["train"]["batch_size"],
-        shuffle=train,
+        shuffle=train and sampler is None,
+        sampler=sampler,
         num_workers=d["num_workers"],
         pin_memory=torch.cuda.is_available(),
         drop_last=train,

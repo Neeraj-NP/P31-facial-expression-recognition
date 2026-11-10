@@ -37,6 +37,9 @@ def build_model(name, num_classes=7, pretrained=True, **kwargs):
     if name in ("resnet18", "resnet50"):
         weights = "DEFAULT" if pretrained else None
         m = getattr(models, name)(weights=weights)
+        if kwargs.get("freeze_backbone"):
+            for p in m.parameters():
+                p.requires_grad = False
         m.fc = nn.Sequential(nn.Dropout(0.3), nn.Linear(m.fc.in_features, num_classes))
         return m
     if name.startswith("vit"):

@@ -18,12 +18,16 @@ only**; RAF-DB is reported but never used for selection.
 
 | Run | Age | Gender | Race |
 |---|---|---|---|
-| `resnet` | 18.2 | 13.6 | 3.1 |
-| `resnet_frozen` | 19.4 | 20.2 | 4.5 |
+| `resnet` | 18.2 | 9.0 | 3.1 |
+| `resnet_frozen` | 19.4 | 9.8 | 4.5 |
 | `resnet_224` | 9.2 | 8.2 | 7.1 |
-| `resnet50` | 11.7 | 8.4 | 4.7 |
+| `resnet50` | 11.7 | 8.1 | 4.7 |
 
-Full per-group numbers with 95% CIs are in each run's `eval_rafdb/subgroup_audit.csv`.
+Gender is female minus male, as in `cnn_tuning.md`. Significance (best and worst groups' 95% CIs
+do not overlap): the gender gap is significant for every run; the age gap is significant for
+`resnet`, `resnet_frozen` and `cnn_best` but not for `resnet_224` or `resnet50`; no race gap is
+significant. Full per-group numbers with CIs are in each run's `eval_rafdb/subgroup_audit.csv`;
+`python -m src.bias_report` regenerates the table.
 
 ## Findings
 
@@ -38,17 +42,20 @@ Full per-group numbers with 95% CIs are in each run's `eval_rafdb/subgroup_audit
   seed can produce, so we treat it as no clear benefit.
 - **ResNet-50 is best on every transfer metric.** Same in-domain accuracy as 224px, but 64.2% on
   RAF-DB (+3.8 pts over the baseline) and the highest macro-F1 on both datasets.
-- **Better transfer came with smaller subgroup gaps.** ResNet-50's age and gender gaps are not
-  statistically significant (the best and worst groups' 95% CIs overlap), unlike the baseline's.
-  The ranking by RAF-DB accuracy and by smallest gap agree, which the CNN runs did not.
-- **Frozen is also the least fair** (gender gap 20.2 pts), but it is the least accurate overall,
-  so this is a weak model rather than a biased one specifically.
+- **Bigger and higher-resolution models narrow the age gap but not the gender gap.** The age gap
+  falls from 18.2 pts (baseline) to 11.7 (ResNet-50) and 9.2 (224px), and is no longer
+  statistically significant for those two. The gender gap barely moves (9.0, 8.2, 8.1) and stays
+  significant in every run: women are recognised 8-10 points more accurately than men regardless of
+  architecture, so better transfer alone does not remove it.
+- **Frozen has similar gaps at a much lower accuracy level** (22-42% per age group), so its
+  larger age gap reflects a weak model rather than a specific bias.
 
 ## Caveats
 
 - One seed per configuration; differences under about 1 point should not be over-read.
-- The gender gap is measured against the "unsure" group (n=199) when that group is best; male vs
-  female alone is smaller.
+- The 199 "unsure" gender images are excluded from the female-vs-male gap but stay in the
+  per-group tables. The age gap compares the single best and worst of five groups, and the 70+
+  group is small (n=89), so it has a wide confidence interval.
 - `resnet_frozen` has no Grad-CAM figure: Grad-CAM needs gradients through the backbone, which
   a frozen backbone does not provide.
 - `best.pt` checkpoints are not in git.

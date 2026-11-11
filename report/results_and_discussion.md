@@ -98,8 +98,8 @@ under-represented groups were not tried.
 
 ## Discussion
 
-**Accuracy, transfer and fairness are separate questions.** Within the CNN, the model that fit
-FER-2013 best transferred worst. Across architectures, pretraining and depth helped transfer most:
+**Accuracy, transfer and fairness are separate questions.** Within the CNN, tuning raised
+FER-2013 accuracy (67.6% to 70.2%) but lowered RAF-DB accuracy (65.1% to 61.2%). Across architectures, pretraining and depth helped transfer most:
 ResNet-50 loses 5.9 points on RAF-DB where the others lose about 9. Fine-tuning was essential, since
 freezing the backbone cost 35 points. Fairness followed neither pattern cleanly, as the persistent
 gender gap shows. The mitigation experiment points the same way: sampling tricks did little, while

@@ -1,8 +1,8 @@
 # Bias results and discussion
 
 *Draft for issue #17. Numbers come from the committed `results/*/eval_*/` files and are
-reproducible with `python -m src.bias_report`. Items marked **TODO** wait on a run that has not
-finished: the mitigation experiment (#12) and Pawan's ViT results (#5, #8, #11).*
+reproducible with `python -m src.bias_report`. Items marked **TODO** wait on Pawan's ViT results
+(#5, #8, #11).*
 
 ## Cross-dataset performance
 
@@ -72,18 +72,29 @@ This check used one model and the test set only.
 
 ## Mitigation: subgroup-balanced fine-tuning
 
-**TODO (issue #12; Kaggle run in progress).** Procedure: fine-tune ResNet-50 on RAF-DB's training
-split for 10 epochs at a low learning rate, under three conditions, and re-audit each on the RAF-DB
-test set.
+We fine-tuned ResNet-50 on RAF-DB's training split for 10 epochs at a low learning rate (1e-5) under
+three sampling conditions and re-audited each on the RAF-DB test set. The control (`none`) uses
+ordinary shuffling; the gender- and age-balanced runs give each group of that attribute equal total
+sampling probability. The control matters: fine-tuning on RAF-DB raises RAF-DB accuracy on its own, so
+only the *difference* between a balanced run and the control is evidence that balancing helped.
 
-| Condition | Sampling |
-|---|---|
-| Control (`none`) | ordinary shuffling |
-| Gender-balanced | equal total sampling probability for each gender group |
-| Age-balanced | equal total sampling probability for each age group |
+| Run | RAF-DB acc | FER-2013 acc | Gender gap (F-M) | Age gap | Race gap |
+|---|---|---|---|---|---|
+| ResNet-50 (before) | 64.2% | 70.1% | 8.1, significant | 11.7 | 4.7 |
+| Control (no balancing) | 79.4% | 63.4% | 4.1, significant | 10.9 | 1.9 |
+| Gender-balanced | 78.9% | 62.5% | 3.6 | 13.3, significant | 3.1 |
+| Age-balanced | 78.4% | 62.6% | 4.5, significant | 10.9 | 3.6 |
 
-The control matters: fine-tuning on RAF-DB raises RAF-DB accuracy on its own, so only the *difference*
-between the balanced runs and the control is evidence that balancing helped. Results table: TODO.
+**Most of the improvement comes from fine-tuning on RAF-DB, not from balancing.** The control alone
+halves the gender gap (8.1 to 4.1) and lifts RAF-DB accuracy by 15 points. Gender-balanced sampling
+reaches a gender gap of 3.6, only 0.5 points below the control and well within the noise of the
+per-group intervals (about 2-3 points), at a cost of 0.5 points of accuracy. Age-balanced sampling
+leaves the age gap exactly where the control has it (10.9). Gender balancing also widened the age gap
+to 13.3 (significant), so improving one attribute can disturb another. Every fine-tuned model loses
+about 7 points on FER-2013, the price of adapting to RAF-DB. We therefore cannot claim that
+subgroup-balanced sampling reduced bias in this setting; what reduced the gaps was training on data
+from the target distribution. Loss reweighting, adversarial debiasing and collecting more data for
+under-represented groups were not tried.
 
 ## Discussion
 
@@ -91,7 +102,11 @@ between the balanced runs and the control is evidence that balancing helped. Res
 FER-2013 best transferred worst. Across architectures, pretraining and depth helped transfer most:
 ResNet-50 loses 5.9 points on RAF-DB where the others lose about 9. Fine-tuning was essential, since
 freezing the backbone cost 35 points. Fairness followed neither pattern cleanly, as the persistent
-gender gap shows.
+gender gap shows. The mitigation experiment points the same way: sampling tricks did little, while
+exposure to data from the target distribution did most of the work, which suggests that part of
+the bias comes from a mismatch between training and target data rather than from how often each
+group is seen. A gender gap of about 4 points remains after fine-tuning, so that mismatch is not the
+whole explanation.
 
 **Limitations.**
 - Demographic labels exist only for RAF-DB, so the audit measures bias in cross-dataset transfer. FER-2013

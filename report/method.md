@@ -75,7 +75,8 @@ Every trained model goes through the same three checks (`src/evaluate.py`,
    bootstrap confidence interval (1000 resamples), and the best-worst group gap. A
    gap is flagged **statistically significant** when the best and worst groups' 95%
    CIs don't overlap — a simple, conservative check that doesn't require assuming a
-   particular distribution. `src/bias_report.py` aggregates this across all three
+   particular distribution. For gender the gap is female vs male; the 199 "unsure"
+   images stay in the per-group tables but are not used for the gap. `src/bias_report.py` aggregates this across all three
    models into one comparison table and a bar chart with CI error bars per attribute.
 4. **Grad-CAM saliency:** for qualitative interpretation, Grad-CAM heatmaps show which
    region of the face each model attended to for its prediction, including a

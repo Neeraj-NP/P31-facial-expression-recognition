@@ -1,13 +1,15 @@
 """Mitigation experiment: fine-tune a trained model on RAF-DB with subgroup-balanced sampling.
 
-    python -m src.mitigate --run results/resnet --balance-by gender --epochs 10
+    python -m src.mitigate --run results/resnet50 --balance-by gender --epochs 10
+    python -m src.mitigate --run results/resnet50 --balance-by none --epochs 10   # control
 
-Produces results/<run>_mitigated/ in the same layout as a normal run (config.yaml,
+Produces results/<run>_mit_<attribute>/ in the same layout as a normal run (config.yaml,
 history.csv, best.pt), so src.evaluate / src.explain / src.bias_report work on it
-unmodified. Compare before vs after with:
+unmodified. Fine-tuning on RAF-DB alone raises RAF-DB accuracy, so the `none` control is
+needed to tell the effect of balancing apart from the effect of the extra training:
 
-    python -m src.evaluate --run results/resnet_mitigated --dataset rafdb
-    python -m src.bias_report --runs results/resnet results/resnet_mitigated --dataset rafdb
+    python -m src.evaluate --run results/resnet50_mit_gender --dataset rafdb
+    python -m src.bias_report --runs results/resnet50 results/resnet50_mit_none results/resnet50_mit_gender --dataset rafdb
 """
 import argparse
 import math
@@ -35,7 +37,8 @@ def subgroup_sampler(df, attribute):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True, help="results/<run> of the already-trained model")
-    ap.add_argument("--balance-by", choices=["gender", "race", "age"], default="gender")
+    ap.add_argument("--balance-by", choices=["gender", "race", "age", "none"], default="gender",
+                    help="'none' = same fine-tuning with ordinary shuffling, the control for the balancing effect")
     ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--lr", type=float, default=1e-5, help="low LR: fine-tuning, not retraining from scratch")
     ap.add_argument("--val-frac", type=float, default=0.15)
@@ -46,14 +49,19 @@ def main():
     seed_everything(cfg["seed"])
 
     root = ROOT / cfg["data"]["rafdb_root"]
-    df = rafdb_frame(root, "train").dropna(subset=[args.balance_by]).reset_index(drop=True)
+    balance = args.balance_by != "none"
+    df = rafdb_frame(root, "train")
+    if balance:
+        df = df.dropna(subset=[args.balance_by])
+    df = df.reset_index(drop=True)
     train_df, val_df = train_test_split(
         df, test_size=args.val_frac, stratify=df["label"], random_state=cfg["seed"]
     )
     print(f"mitigation train={len(train_df)} val={len(val_df)} balance_by={args.balance_by} device={device}")
-    print(train_df[args.balance_by].value_counts().to_string())
+    if balance:
+        print(train_df[args.balance_by].value_counts().to_string())
 
-    sampler = subgroup_sampler(train_df, args.balance_by)
+    sampler = subgroup_sampler(train_df, args.balance_by) if balance else None
     train_loader = make_loader(cfg, train_df, train=True, sampler=sampler)
     val_loader = make_loader(cfg, val_df, train=False)
 
@@ -65,7 +73,7 @@ def main():
     )
     scaler = torch.amp.GradScaler() if cfg["train"].get("amp", True) and device.type == "cuda" else None
 
-    out = ROOT / "results" / f"{Path(args.run).name}_mitigated"
+    out = ROOT / "results" / f"{Path(args.run).name}_mit_{args.balance_by}"
     out.mkdir(parents=True, exist_ok=True)
     mcfg = {**cfg, "mitigation": {
         "source_run": str(args.run), "balance_by": args.balance_by, "epochs": args.epochs, "lr": args.lr,

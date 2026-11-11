@@ -48,10 +48,13 @@ def gap_table(df):
 def plot_attribute(df, attribute, out):
     sub = df[df["attribute"] == attribute]
     models, groups = list(sub["model"].unique()), list(sub["group"].unique())
+    age_order = ["0-3", "4-19", "20-39", "40-69", "70+"]
+    if attribute == "age":
+        groups = [g for g in age_order if g in groups]
     width = 0.8 / len(models)
     x = range(len(groups))
 
-    fig, ax = plt.subplots(figsize=(1.6 * len(groups) * max(len(models), 1) + 2, 4))
+    fig, ax = plt.subplots(figsize=(min(12, 0.5 * len(groups) * len(models) + 3), 4.5))
     for i, model in enumerate(models):
         m = sub[sub["model"] == model].set_index("group").reindex(groups)
         acc = m["acc"].values

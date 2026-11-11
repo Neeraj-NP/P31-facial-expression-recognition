@@ -12,13 +12,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
-import yaml
 
 
 def load_audit(run_dir, dataset):
     run_dir = Path(run_dir)
-    cfg_path = run_dir / "config.yaml"
-    model_name = yaml.safe_load(cfg_path.open())["model"]["name"] if cfg_path.exists() else run_dir.name
+    model_name = run_dir.name
     df = pd.read_csv(run_dir / f"eval_{dataset}" / "subgroup_audit.csv")
     df["acc_ci"] = df["acc_ci"].apply(ast.literal_eval)
     df["macro_f1_ci"] = df["macro_f1_ci"].apply(ast.literal_eval)
@@ -65,9 +63,8 @@ def plot_attribute(df, attribute, out):
     ax.set_xticklabels(groups)
     ax.set_ylabel("accuracy")
     ax.set_title(f"RAF-DB accuracy by {attribute} (95% bootstrap CI)")
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig(out, dpi=150)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1))
+    plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
 

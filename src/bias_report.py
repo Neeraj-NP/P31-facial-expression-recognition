@@ -29,6 +29,8 @@ def gap_table(df):
     """Best-worst accuracy gap per model/attribute. Flagged significant when the best and
     worst groups' 95% bootstrap CIs don't overlap."""
     rows = []
+    # "unsure" (n=199) is not a gender group in the female-vs-male comparison; it stays in the per-group tables
+    df = df[~((df["attribute"] == "gender") & (df["group"] == "unsure"))]
     for (model, attribute), g in df.groupby(["model", "attribute"]):
         best = g.loc[g["acc"].idxmax()]
         worst = g.loc[g["acc"].idxmin()]

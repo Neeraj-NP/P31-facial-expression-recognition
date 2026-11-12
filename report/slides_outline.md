@@ -1,27 +1,28 @@
 # Slides outline (issue #19)
 
-Built deck: eport/slides.pptx (12 slides, editable; ViT and Grad-CAM-by-group content is marked pending). 12 slides, ~10-12 minutes. Figures come from `notebooks/02_results.ipynb` (#14) unless
-noted. **Status:** ready = content and figure exist now; needs = waiting on a run.
+The built deck is `report/slides.pptx` (12 slides, native charts, speaker notes). It is generated
+with real numbers from the result files; slides that need the ViT results show "pending".
+~10-12 minutes. **Status:** ready = content exists now; pending = waiting on a run.
 
 | # | Slide | Key points | Figure | Speaker | Status |
 |---|---|---|---|---|---|
 | 1 | Title | P31: Facial Expression Recognition: Accuracy, Attention and Bias; team names | none | any | ready |
-| 2 | Problem | 7-emotion classification from faces; why accuracy alone isn't enough (generalisation, fairness, interpretability) | example faces per class | Neeraj | ready |
-| 3 | Data | FER-2013 (35,887 imgs, 48Ã—48 gray) for training; RAF-DB (in-the-wild, gender/race/age labels) for cross-dataset + bias; 16.6x class imbalance, 7.4% test leakage | `results/eda/fer_class_distribution.png`, `fer_samples.png` | Neeraj | ready |
-| 4 | Models | CNN from scratch â†’ ResNet-18/50 (ImageNet transfer) â†’ ViT fine-tuning; one shared training/eval pipeline | architecture diagram (simple boxes) | Rakshita | ready |
-| 5 | Training setup | AdamW, warmup + cosine, class-weighted loss + label smoothing, augmentation, early stop on val macro-F1 | none (bullet slide) | Rakshita | ready |
-| 6 | Tuning | CNN: 5 runs, best 70.2% (longer training + lighter reg help, augmentation essential). ResNet: frozen vs fine-tune, 112 vs 224, R18 vs R50 | tuning table | Neeraj + Rakshita | needs ResNet (#7) |
-| 7 | Results: in-domain | FER-2013 test accuracy / macro-F1 for all 3 models; per-class F1 (fear hardest, happy easiest) | comparison bar chart + confusion matrix of best model | Pawan | needs #4, #5, #14 |
-| 8 | Results: cross-dataset | FER-2013 â†’ RAF-DB drop for each model; best in-domain â‰  best transfer (CNN: 70.2% â†’ 61.2%) | in-domain vs cross-dataset bars | Neeraj | needs #9 |
-| 9 | Bias audit | Accuracy per gender/race/age with 95% CIs; significant gaps (CNN: age 15pt, gender 10.4pt significant; race not) | `results/bias_report/*_by_model.png`, gap table | Rakshita | needs #10 (all models) |
-| 10 | Mitigation | Subgroup-balanced fine-tuning on RAF-DB; gap and accuracy before vs after | before/after gap bars | Rakshita | needs #12 |
-| 11 | Attention | Grad-CAM: models focus on mouth/eyes; fear errors attend to hands/background; mean CAM per subgroup | `gradcam_grid.png`, `mean_cam_by_gender.png` | Pawan | needs #11 |
-| 12 | Conclusion | Best model + number; accuracy vs generalisation vs fairness trade-off; limitations (label noise, leakage, small subgroups like 70+) | none | Pawan | needs all |
+| 2 | Problem | 7-emotion classification; why accuracy alone isn't enough (generalisation, fairness, interpretability) | three question cards | Neeraj | ready |
+| 3 | Data | FER-2013 (35,887 imgs, 48×48 gray) for training; RAF-DB (in the wild, gender/race/age labels) for cross-dataset test and bias; 16.6x class imbalance, 7.4% test leakage | stat tiles | Neeraj | ready |
+| 4 | Models | CNN from scratch, ResNet-18/50 (ImageNet transfer), ViT fine-tuning; one shared pipeline | three model cards | Rakshita | ViT details pending |
+| 5 | Training setup | AdamW, warmup + cosine, class-weighted loss + label smoothing, augmentation, early stop on val macro-F1 | numbered rows | Rakshita | ready |
+| 6 | Tuning | Frozen backbone 34.5% vs fine-tuned 69.1% (this linear head, trained this way); 224 px +1.2 pts, no clear benefit; ResNet-50 is the best ResNet (64.2% on RAF-DB), picked on validation macro-F1 | FER-2013 vs RAF-DB accuracy chart | Rakshita | ready |
+| 7 | Cross-dataset transfer | Accuracy and macro-F1 lost on RAF-DB. Among models selected on FER-2013 validation, ResNet-50 loses least; the untuned CNN baseline transfers about as well (65.1% / 0.480). RAF-DB is 39% happy, so accuracy flatters; macro-F1 is the better guide | accuracy-drop and macro-F1-drop chart | Neeraj + Rakshita | ViT pending |
+| 8 | Bias: gender | Women recognised 8-10 pts better than men in every model, clear in all. For ResNet-50, emotion mix explains about a quarter of the gap (`src/class_mix_check.py`) | female vs male chart | Rakshita | ready |
+| 9 | Bias: gaps | Age gap 18.2 → 11.7 → 9.2 with better models; gender gap stays; no race gap reaches p < 0.05; 70+ has only 89 images. Interval check plus p-value in `results/bias_report/gap_table.csv` | gap table | Rakshita | ViT pending |
+| 10 | Mitigation | Fine-tuning on RAF-DB halves the gender gap (8.1 → 4.1); balanced sampling adds ~0.5 pts (noise) and gender balancing widens the age gap; FER-2013 accuracy falls 70.1% → ~63% | gender-gap chart | Rakshita | ready |
+| 11 | Attention | ResNet-50 Grad-CAM: heat mostly on mouth and nose, eyes rarely; ViT and per-group heatmaps pending | `results/resnet50/explain_fer2013/gradcam_grid.png` | Pawan | ViT and per-group pending |
+| 12 | Conclusion | Among tuned models ResNet-50 transfers best; gender bias persists in every model; balanced sampling did little beyond fine-tuning; limits | takeaway cards | Pawan | ViT pending |
 
-## Notes for building the deck
+## Notes for finishing the deck
 
-- Keep one message per slide; put numbers in large text, details in speaker notes.
-- Always show CIs on the bias slide, otherwise small groups (70+, n=89) look more
-  certain than they are.
-- Slides 9-10 are the project's main contribution beyond accuracy; give them the most time.
+- One message per slide; numbers in large text, details in the speaker notes.
+- Always show intervals or p-values when claiming a gap, otherwise small groups (70+, n=89)
+  look more certain than they are.
+- Slides 8-10 are the project's main contribution beyond accuracy; give them the most time.
 - Rehearsal and final timing are part of #20.

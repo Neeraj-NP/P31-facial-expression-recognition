@@ -56,7 +56,10 @@ baseline, so differences in outcome can be attributed to that one change:
 
 `freeze_backbone` is implemented by setting `requires_grad=False` on every backbone
 parameter before the new classifier head (which keeps `requires_grad=True`) is
-attached, so the optimiser only updates the head.
+attached, so the optimiser only updates the head. The frozen backbone is also kept in eval mode
+during training: otherwise PyTorch's `model.train()` puts its BatchNorm layers back in
+training mode and their running statistics drift away from the pretrained ones (our first frozen
+run suffered from exactly this and scored about 30% before the fix).
 
 ## Evaluation protocol
 
@@ -72,10 +75,11 @@ Every trained model goes through the same three checks (`src/evaluate.py`,
 3. **Subgroup bias audit (issue #10):** RAF-DB's manual annotations (gender, race,
    5-bucket age group) let us break the cross-dataset accuracy down by demographic
    subgroup. For each attribute we report accuracy and macro-F1 per group with a 95%
-   bootstrap confidence interval (1000 resamples), and the best-worst group gap. A
-   gap is flagged **statistically significant** when the best and worst groups' 95%
-   CIs don't overlap — a simple, conservative check that doesn't require assuming a
-   particular distribution. For gender the gap is female vs male; the 199 "unsure"
+   bootstrap confidence interval (1000 resamples), and the best-worst group gap. We judge a
+   gap two ways: whether the best and worst groups' 95% intervals are **separated** (don't
+   overlap; a simple, conservative check, so overlapping intervals do not show the gap is
+   zero), and a two-proportion z-test **p-value** between those two groups. Neither accounts
+   for the best and worst groups being picked from several, so both flatter a gap somewhat. For gender the gap is female vs male; the 199 "unsure"
    images stay in the per-group tables but are not used for the gap. `src/bias_report.py` aggregates this across all three
    models into one comparison table and a bar chart with CI error bars per attribute.
 4. **Grad-CAM saliency:** for qualitative interpretation, Grad-CAM heatmaps show which
@@ -85,11 +89,14 @@ Every trained model goes through the same three checks (`src/evaluate.py`,
 
 ### Mitigation experiment (issue #12)
 
-For whichever demographic attribute shows the largest significant gap, we fine-tune
+For the two attributes with the largest gaps, gender and age, we fine-tune
 the already-trained model further on RAF-DB's own training split, using a
 `WeightedRandomSampler` with inverse-frequency weights so every group of that
 attribute is drawn with equal total probability during training (i.e. the rarer
-group is oversampled, the common group undersampled, in expectation). Fine-tuning
+group is oversampled, the common group undersampled, in expectation; every attribute value
+counts as a group, so gender's small "unsure" group is sampled about 5x more often than its share
+of the data). A control run uses identical fine-tuning with ordinary shuffling, so the effect of
+balancing can be told apart from the effect of simply training on RAF-DB. Fine-tuning
 uses a low learning rate (1e-5) relative to original training, since the goal is to
 adapt the existing model rather than retrain it. We then repeat the bias audit on
 the fine-tuned model and compare gaps and overall accuracy before vs. after, to see

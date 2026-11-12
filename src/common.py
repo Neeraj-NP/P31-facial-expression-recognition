@@ -57,7 +57,7 @@ def make_loader(cfg, df, train):
 
 def model_kwargs(m):
     """Optional architecture settings from the config's model section."""
-    return {k: m[k] for k in ("dropout", "block_dropout") if k in m}
+    return {k: m[k] for k in ("dropout", "block_dropout", "freeze_blocks") if k in m}
 
 
 def load_run(run_dir, device):

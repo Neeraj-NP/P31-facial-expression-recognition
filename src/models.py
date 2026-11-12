@@ -41,7 +41,17 @@ def build_model(name, num_classes=7, pretrained=True, **kwargs):
         return m
     if name.startswith("vit"):
         # e.g. vit_base_patch16_224, vit_small_patch16_224
-        return timm.create_model(name, pretrained=pretrained, num_classes=num_classes)
+        m = timm.create_model(name, pretrained=pretrained, num_classes=num_classes)
+        n_freeze = kwargs.get("freeze_blocks", 0)
+        if n_freeze:
+            # freeze the patch embedding and the first n transformer blocks, train the rest
+            frozen = [m.patch_embed, m.blocks[:n_freeze]]
+            for p in (m.cls_token, m.pos_embed):
+                p.requires_grad = False
+            for mod in frozen:
+                for p in mod.parameters():
+                    p.requires_grad = False
+        return m
     raise ValueError(f"Unknown model: {name}")
 
 

@@ -1,0 +1,26 @@
+data:
+  augment: true
+  channels: 1
+  fer2013_root: /kaggle/input/datasets/msambare/fer2013
+  img_size: 48
+  num_workers: 2
+  rafdb_root: /kaggle/input/datasets/neer768/rafdb-basic
+  random_erasing: 0.0
+  val_frac: 0.1
+model:
+  block_dropout: 0.1
+  dropout: 0.2
+  name: cnn
+  num_classes: 7
+  pretrained: false
+seed: 42
+train:
+  amp: true
+  batch_size: 128
+  class_weights: true
+  early_stop_patience: 15
+  epochs: 100
+  label_smoothing: 0.1
+  lr: 0.001
+  warmup_epochs: 2
+  weight_decay: 0.0001

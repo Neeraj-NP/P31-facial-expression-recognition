@@ -36,6 +36,20 @@ python -m src.explain --run results/<run> --dataset rafdb --group-by gender
 Every evaluation writes `metrics.json`, `predictions.csv`, `confusion_matrix.png` and (RAF-DB)
 `subgroup_audit.csv` with accuracy / macro-F1 and 95% bootstrap CIs per gender, race and age group.
 
+## Experiments
+
+Each experiment is its own file in `configs/` and is trained with `--run-name <config name>`, so results
+land in `results/<config name>/`. On Kaggle, set `CONFIG = "<config name>"` in `notebooks/kaggle_train.ipynb`.
+Optional keys (defaults reproduce the baselines):
+
+| Key | Default | Effect |
+|---|---|---|
+| `data.augment` | `true` | flip / affine / colour jitter on training images |
+| `data.random_erasing` | `0.25` | RandomErasing probability, `0` = off |
+| `model.dropout` | `0.4` | CNN classifier dropout |
+| `model.block_dropout` | `0.25` | CNN dropout after each conv block |
+| `train.class_weights` | `true` | inverse-frequency class weights in the loss |
+
 ## Labels
 
 All code uses one label order (`src/datasets.py`):

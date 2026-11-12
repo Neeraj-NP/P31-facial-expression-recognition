@@ -1,0 +1,23 @@
+# CNN tuning (#6): plain cross-entropy - does disgust stop being over-predicted?
+seed: 42
+data:
+  fer2013_root: data/fer2013
+  rafdb_root: data/rafdb
+  val_frac: 0.1
+  img_size: 48
+  channels: 1
+  num_workers: 4
+model:
+  name: cnn
+  num_classes: 7
+  pretrained: false
+train:
+  epochs: 60
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  label_smoothing: 0.1
+  class_weights: false
+  amp: true
+  early_stop_patience: 12

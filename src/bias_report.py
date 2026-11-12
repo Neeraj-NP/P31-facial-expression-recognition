@@ -1,4 +1,4 @@
-"""Aggregate subgroup bias audits across models: gap table + significance + plots.
+"""Aggregate subgroup bias audits across models: gap table + interval/p-value checks + plots.
 
 Uses each run's eval_<dataset>/subgroup_audit.csv (produced by src.evaluate).
 
@@ -6,6 +6,7 @@ Uses each run's eval_<dataset>/subgroup_audit.csv (produced by src.evaluate).
 """
 import argparse
 import ast
+import math
 from pathlib import Path
 
 import matplotlib
@@ -25,9 +26,19 @@ def load_audit(run_dir, dataset):
     return df
 
 
+def two_proportion_p(acc1, n1, acc2, n2):
+    """Two-sided p-value of a pooled two-proportion z-test between two groups' accuracies."""
+    pooled = (acc1 * n1 + acc2 * n2) / (n1 + n2)
+    se = math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2))
+    return math.erfc(abs(acc1 - acc2) / se / math.sqrt(2)) if se else 1.0
+
+
 def gap_table(df):
-    """Best-worst accuracy gap per model/attribute. Flagged significant when the best and
-    worst groups' 95% bootstrap CIs don't overlap."""
+    """Best-worst accuracy gap per model/attribute, with two ways to judge it:
+    - ci_separated: the best and worst groups' 95% bootstrap CIs do not overlap. Conservative, so a
+      gap can be real even when this is False.
+    - p_value: two-proportion z-test between the best and worst group. Neither measure accounts for
+      the best and worst groups being picked out of several, so both flatter the gap a little."""
     rows = []
     # "unsure" (n=199) is not a gender group in the female-vs-male comparison; it stays in the per-group tables
     df = df[~((df["attribute"] == "gender") & (df["group"] == "unsure"))]
@@ -40,7 +51,8 @@ def gap_table(df):
             "model": model, "attribute": attribute,
             "best_group": best["group"], "best_acc": best["acc"],
             "worst_group": worst["group"], "worst_acc": worst["acc"],
-            "gap": best["acc"] - worst["acc"], "significant": worst_hi < best_lo,
+            "gap": best["acc"] - worst["acc"], "ci_separated": worst_hi < best_lo,
+            "p_value": two_proportion_p(best["acc"], best["n"], worst["acc"], worst["n"]),
         })
     return pd.DataFrame(rows).sort_values(["attribute", "gap"], ascending=[True, False])
 
@@ -48,10 +60,13 @@ def gap_table(df):
 def plot_attribute(df, attribute, out):
     sub = df[df["attribute"] == attribute]
     models, groups = list(sub["model"].unique()), list(sub["group"].unique())
+    age_order = ["0-3", "4-19", "20-39", "40-69", "70+"]
+    if attribute == "age":
+        groups = [g for g in age_order if g in groups]
     width = 0.8 / len(models)
     x = range(len(groups))
 
-    fig, ax = plt.subplots(figsize=(1.6 * len(groups) * max(len(models), 1) + 2, 4))
+    fig, ax = plt.subplots(figsize=(min(12, 0.5 * len(groups) * len(models) + 3), 4.5))
     for i, model in enumerate(models):
         m = sub[sub["model"] == model].set_index("group").reindex(groups)
         acc = m["acc"].values

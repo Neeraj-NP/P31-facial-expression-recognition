@@ -28,7 +28,11 @@ from .train import run_epoch
 
 
 def subgroup_sampler(df, attribute):
-    """Inverse-frequency sampling weights so every group of `attribute` is drawn equally often."""
+    """Inverse-frequency sampling weights so every group of `attribute` is drawn equally often.
+
+    Every value counts as a group, including gender "unsure" (about 6% of images), so with
+    gender each of the three groups gets a third of the draws and "unsure" images are sampled
+    roughly 5x more often than their share of the data."""
     counts = df[attribute].value_counts()
     weights = df[attribute].map(lambda g: 1.0 / counts[g]).to_numpy()
     return WeightedRandomSampler(weights, num_samples=len(df), replacement=True)
@@ -51,9 +55,8 @@ def main():
     root = ROOT / cfg["data"]["rafdb_root"]
     balance = args.balance_by != "none"
     df = rafdb_frame(root, "train")
-    if balance:
-        df = df.dropna(subset=[args.balance_by])
-    df = df.reset_index(drop=True)
+    # same rows for every condition, so the control and the balanced runs train and validate on identical data
+    df = df.dropna(subset=[c for c in ("gender", "race", "age") if c in df]).reset_index(drop=True)
     train_df, val_df = train_test_split(
         df, test_size=args.val_frac, stratify=df["label"], random_state=cfg["seed"]
     )

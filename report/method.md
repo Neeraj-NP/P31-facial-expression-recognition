@@ -1,8 +1,6 @@
 # Method
 
-*Draft for issue #17 ("Report: method, bias results, discussion"). This covers the
-"Method" checklist item in full; "Bias audit and mitigation results" and "Discussion"
-are filled in once the ResNet runs (#4, #7, #10, #12) complete.*
+*Draft of the Method section. Results and discussion are in `results_and_discussion.md`.*
 
 ## Models
 
@@ -43,7 +41,7 @@ Every model is trained with the same recipe, parameterised per-model in
 - **Validation split:** a stratified 10% held out from FER-2013's official training
   set (seeded, so it's identical across all models and reruns).
 
-### ResNet tuning experiments (issue #7)
+### ResNet tuning experiments
 
 Three experiments isolate one variable each against the `configs/resnet.yaml`
 baseline, so differences in outcome can be attributed to that one change:
@@ -72,7 +70,7 @@ Every trained model goes through the same three checks (`src/evaluate.py`,
    split — a dataset it has never seen, collected differently (in-the-wild vs. the
    FER-2013 protocol). This measures whether the model learned "emotion" in a way
    that generalises, rather than memorising dataset-specific artefacts.
-3. **Subgroup bias audit (issue #10):** RAF-DB's manual annotations (gender, race,
+3. **Subgroup bias audit:** RAF-DB's manual annotations (gender, race,
    5-bucket age group) let us break the cross-dataset accuracy down by demographic
    subgroup. For each attribute we report accuracy and macro-F1 per group with a 95%
    bootstrap confidence interval (1000 resamples), and the best-worst group gap. We judge a
@@ -87,7 +85,7 @@ Every trained model goes through the same three checks (`src/evaluate.py`,
    mean-heatmap comparison across subgroups (does the model look in the same place
    for every gender/race/age group?).
 
-### Mitigation experiment (issue #12)
+### Mitigation experiment
 
 For the two attributes with the largest gaps, gender and age, we fine-tune
 the already-trained model further on RAF-DB's own training split, using a

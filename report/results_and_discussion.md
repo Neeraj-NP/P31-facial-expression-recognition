@@ -1,14 +1,13 @@
 # Bias results and discussion
 
-*Draft for issue #17. Numbers come from the committed `results/*/eval_*/` files and are
-reproducible with `python -m src.bias_report`. Items marked **TODO** wait on Pawan's ViT results
-(#5, #8, #11).*
+*Draft. Numbers come from the committed `results/*/eval_*/` files and are reproducible with
+`python -m src.bias_report`. Items marked **TODO** are waiting on the ViT results.*
 
 ## Cross-dataset performance
 
 All models are trained on FER-2013 only. RAF-DB (3,068 test images) is never used for training or
-model selection, so the drop from FER-2013 to RAF-DB measures how well each model transfers. Every
-model below, except the untuned CNN baseline, was chosen by FER-2013 validation macro-F1.
+model selection, so the drop from FER-2013 to RAF-DB measures how well each model transfers. `cnn_best` and `resnet50` are the configurations selected on FER-2013 validation macro-F1;
+the other rows are baselines or tuning runs, shown for comparison.
 
 | Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Accuracy drop | Macro-F1 drop |
 |---|---|---|---|---|
@@ -22,10 +21,11 @@ model below, except the untuned CNN baseline, was chosen by FER-2013 validation 
 
 \*The frozen model is weak on both datasets, so its small "drop" is not evidence of good transfer.
 
-Among the models selected on FER-2013 validation, ResNet-50 transfers best: the highest RAF-DB
-accuracy and macro-F1 and the smallest drop in both. But the untuned CNN baseline, which that rule
-did not pick, scores 65.1% / 0.480 on RAF-DB and loses less still. ResNet-50's advantage over a simple
-CNN is therefore small (macro-F1 +0.013, one seed), not a clear win. Accuracy also flatters every
+Of the two selected configurations, ResNet-50 transfers better than the tuned CNN: 64.2% vs 61.2% on
+RAF-DB, macro-F1 0.493 vs 0.443, and a smaller drop in both. Across all rows it has the highest RAF-DB
+macro-F1, but the untuned CNN baseline (not selected) scores 65.1% / 0.480 and loses less still.
+ResNet-50's advantage over a simple CNN is therefore small (macro-F1 +0.013, one seed), not a clear win.
+Accuracy also flatters every
 model here, because RAF-DB is 39% happy; the macro-F1 drop is the better guide. The CNN shows a
 trade-off: tuning on FER-2013 raised FER-2013 accuracy (67.6% to 70.2%) and lowered RAF-DB accuracy
 (65.1% to 61.2%) (`cnn_tuning.md`).
@@ -59,16 +59,17 @@ caucasian 63.8% (2,351), asian 67.1% (483), african-american 62.4% (234).
 1. **Gender is the one consistent bias.** Every model recognises women 8-10 points more accurately
    than men, and the gap is clear in all of them (p < 0.001, intervals separated). Larger or
    higher-resolution models barely change it (9.0 for ResNet-18, 8.2 at 224px, 8.1 for ResNet-50).
-2. **Age gaps shrink with better models.** The age gap falls from 18.2 (ResNet-18) to 11.7 (ResNet-50)
-   and 9.2 (224px). At 9.2 it is no longer clearly different from zero (p = 0.09); at 11.7 it is
-   borderline (p = 0.03, intervals overlapping). The weakest group is always 70+, which has only 89
-   images, so its interval is wide and its estimate is the least certain.
+2. **Age gaps vary widely between models.** They range from 9.2 (ResNet-18 at 224px) to 21.2 (the untuned
+   CNN), with the tuned CNN at 15.2, ResNet-18 at 18.2, ResNet-50 at 11.7 and the frozen model at 19.4.
+   In every model except the frozen one, 70+ is the weakest group; it has only 89 images, so its
+   interval is wide and its estimate the least certain. We did not test whether the differences between
+   models are significant; with one seed they may be noise.
 3. **No race gap reaches p < 0.05 for any model**, but the smallest group (african-american, n=234)
    has wide intervals, so this is an absence of evidence rather than evidence of fairness.
-4. **Fairness did not track accuracy.** Among the tuned models, ResNet-50 transfers best and has a
-   smaller age gap, but its gender gap is as large as the others'. Tuning the CNN widened its gender
-   gap (8.6 to 10.4) while narrowing its age gap (21.2 to 15.2), so one change moved the two in
-   opposite directions.
+4. **Fairness did not track accuracy.** ResNet-50 transfers best of the two selected configurations
+   and has a smaller age gap than the tuned CNN (11.7 vs 15.2), but its gender gap is as large as the
+   others'. Tuning the CNN widened its gender gap (8.6 to 10.4) while narrowing its age gap (21.2 to
+   15.2), so one change moved the two in opposite directions.
 
 ### Why is accuracy lower for men?
 
@@ -78,7 +79,7 @@ re-weighting men's accuracy to the women's emotion mix raises it only from 59.4%
 about a quarter of the 8.1-point gap. The rest comes from lower accuracy *within* emotions, most
 clearly neutral (54% for men, 69% for women), and also happy, fear and angry. So for ResNet-50 the
 emotion mix is a minor part and the model is less accurate on men's faces even within the same
-emotions. Neeraj's CNN baseline analysis on PR #22 points the same way. We did not test why; possible
+emotions. We did not test why; possible
 causes such as differences in how the datasets show expression across gender are hypotheses. This
 check used one model and the test set only; `python -m src.class_mix_check --run results/resnet50`
 reproduces it (it needs the local `predictions.csv`, which is not committed because of the RAF-DB
@@ -118,9 +119,9 @@ under-represented groups were not tried.
 ## Discussion
 
 **Accuracy, transfer and fairness are separate questions.** Within the CNN, tuning raised FER-2013
-accuracy (67.6% to 70.2%) but lowered RAF-DB accuracy (65.1% to 61.2%). Across the tuned models,
-pretraining and depth helped transfer most: ResNet-50 loses 5.9 points of accuracy on RAF-DB where the
-others lose about 9, although the untuned CNN baseline transferred as well. Full fine-tuning clearly
+accuracy (67.6% to 70.2%) but lowered RAF-DB accuracy (65.1% to 61.2%). ResNet-50 transferred best of the two selected configurations (a 5.9-point accuracy drop vs 9.0 for the
+tuned CNN), but pretraining alone did not help: ResNet-18 transfers no better than the CNN (8.7 vs 9.0),
+and the untuned CNN baseline transferred as well as anything. Full fine-tuning clearly
 beat our frozen-backbone run (34.5% vs 69.1%), though that run is one linear head trained one way, not a
 ceiling for frozen features. Fairness followed neither pattern cleanly, as the persistent gender gap
 shows. The mitigation experiment points the same way: sampling tricks did little, while exposure to
@@ -136,9 +137,10 @@ gender gap of about 4 points remains after fine-tuning, so that mismatch is not 
   comparisons have wide intervals. An overlap or a large p-value is not "no bias".
 - Labels come from crowd annotation of faces and are themselves a possible source of bias.
 - FER-2013 contains duplicated and conflicting-label images, and about 7% of its test images also
-  appear in training (see the EDA, PR #21). The validation split is a random 10% of that training set,
-  which contains many exact duplicates, so validation macro-F1, which we used to pick checkpoints and
-  configurations, is somewhat optimistic. The cross-dataset numbers are not affected by this leakage.
+  appear in training (see the Data section). The FER-2013 test accuracies are therefore somewhat
+  optimistic. So is the validation macro-F1 we used to pick checkpoints and configurations: the
+  validation split is a random 10% of a training set that contains many exact duplicates. The
+  cross-dataset numbers are not affected by this leakage.
 - Gender is a three-way label in RAF-DB (female, male, unsure) and race a three-way label, which
   simplifies a continuous reality.
 - ViT results (**TODO**) are not yet included, so conclusions about "all three model families" are

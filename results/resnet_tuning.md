@@ -48,11 +48,12 @@ with intervals are in each run's `eval_rafdb/subgroup_audit.csv`.
   (+3.8 pts over the ResNet-18 baseline) and the highest macro-F1 on both datasets among the ResNets.
   Against the CNN, which was not the selection criterion here: Neeraj's untuned CNN baseline scores
   65.1% / 0.480 on RAF-DB, so ResNet-50's transfer advantage over it is small (macro-F1 +0.013, one seed).
-- **Bigger and higher-resolution models narrow the age gap but not the gender gap.** The age gap
-  falls from 18.2 pts (baseline) to 11.7 (ResNet-50) and 9.2 (224px); the intervals no longer
-  separate for those two (ResNet-50 is borderline, p = 0.03; 224px p = 0.09). The gender gap barely
-  moves (9.0, 8.2, 8.1) and is clear in every run: women are recognised 8-10 points more accurately than men regardless of
-  architecture, so better transfer alone does not remove it.
+- **Age gaps differ between runs; the gender gap does not.** The age gap is 18.2 pts for the
+  ResNet-18 baseline, 11.7 for ResNet-50 and 9.2 at 224px (frozen: 19.4; ResNet-50 p = 0.03, 224px
+  p = 0.09). We did not test whether these differences between models are real (one seed per run,
+  and the 70+ group has only 89 images), so we only describe them. The gender gap barely moves
+  (9.0, 8.2, 8.1) and is clear in every run: women are recognised 8-10 points more accurately than
+  men regardless of architecture, so better transfer alone does not remove it.
 - **Frozen has similar gaps at a much lower accuracy level** (22-42% per age group), so its
   larger age gap reflects a weak model rather than a specific bias.
 

@@ -37,7 +37,22 @@ def build_model(name, num_classes=7, pretrained=True, **kwargs):
     if name in ("resnet18", "resnet50"):
         weights = "DEFAULT" if pretrained else None
         m = getattr(models, name)(weights=weights)
+        if kwargs.get("freeze_backbone"):
+            for p in m.parameters():
+                p.requires_grad = False
         m.fc = nn.Sequential(nn.Dropout(0.3), nn.Linear(m.fc.in_features, num_classes))
+        if kwargs.get("freeze_backbone"):
+            # frozen BatchNorm layers must stay in eval mode, otherwise their running stats keep drifting
+            module_train = m.train
+
+            def train(mode=True):
+                module_train(mode)
+                for name, child in m.named_children():
+                    if name != "fc":
+                        child.eval()
+                return m
+
+            m.train = train
         return m
     if name.startswith("vit"):
         # e.g. vit_base_patch16_224, vit_small_patch16_224

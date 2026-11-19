@@ -13,17 +13,20 @@ accurate on average but systematically worse for one gender or age group can har
 misreads.
 
 Most FER work reports a single accuracy on the test split of the same dataset it was trained on. That
-number answers neither question. We train three model families of increasing size and pretraining on
-FER-2013 [1] and study them along three axes:
+number answers neither question. We train three model families on FER-2013 [1]: a CNN trained from
+scratch and two ImageNet-pretrained architectures. We study them along three axes:
 
 1. **Accuracy.** How do a CNN trained from scratch, an ImageNet-pretrained ResNet [5] and a Vision
    Transformer (ViT) [6] compare on FER-2013, under one shared training and evaluation pipeline?
 2. **Transfer.** How much performance survives when the same models, unchanged, are tested on RAF-DB
-   [2, 3], a dataset collected and labelled independently? Which emotions transfer worst, and why?
+   [2, 3], a dataset collected and labelled independently? Which emotions transfer worst, and where do
+   their errors go?
 3. **Bias.** Using RAF-DB's gender, race and age annotations, do accuracy gaps between demographic
    groups exist, are they statistically supported, and does subgroup-balanced fine-tuning reduce them?
 
-We also use Grad-CAM [12] to inspect which facial regions each model relies on.
+We also use Grad-CAM [12] to inspect which facial regions each model relies on. The CNN and ResNet
+configurations were tuned on FER-2013 validation data; the ViT is a single untuned baseline run, so
+comparisons involving it are indicative rather than like-for-like.
 
 **Contributions.**
 - One configuration-driven pipeline (`src/train.py`, `src/evaluate.py`) in which the three model
@@ -32,8 +35,8 @@ We also use Grad-CAM [12] to inspect which facial regions each model relies on.
   accuracy falls by 15-22 points on RAF-DB, against 2.5-9 points for plain accuracy, and the loss is
   concentrated in disgust, surprise, fear and anger. We also find that tuning for in-domain accuracy
   can make transfer worse.
-- A subgroup audit with bootstrap confidence intervals and significance tests. It finds a consistent
-  8-10 point accuracy gap between women and men across all models. A controlled mitigation
+- A subgroup audit with bootstrap confidence intervals and significance tests. It finds an accuracy
+  gap between women and men in every model (8-10 points for the CNN and ResNets, 5.4 for ViT-S). A controlled mitigation
   experiment shows that fine-tuning on target-domain data, not balanced sampling, is what narrows it.
 
 ## 2. Related work
@@ -72,7 +75,8 @@ controlled mitigation experiment that separates the effect of balanced sampling 
 fine-tuning on target-domain data.
 
 **Explanation methods.** Grad-CAM [12] weights a convolutional layer's activations by the gradient of the
-class score to produce a coarse map of the image regions that drive a prediction. It is a standard way to
+class score to produce a coarse map of the image regions that drive a prediction. For the ViT we apply it
+to the last block's patch-token outputs, reshaped to a 14x14 grid. It is a standard way to
 check whether FER models attend to expressive regions (eyes, brows, mouth) or to background and
 artefacts.
 
@@ -99,8 +103,8 @@ images together) are used only for the final in-domain test.
 Our exploratory analysis (`notebooks/01_eda.ipynb`, figures in `results/eda/`) found four properties that
 shape the rest of the study:
 
-- **Strong class imbalance.** Happy outnumbers disgust 16.6 to 1 in our training split, and disgust has
-  only 392 training images. We therefore use an inverse-frequency class-weighted loss and report
+- **Strong class imbalance.** Happy outnumbers disgust 16.6 to 1 in our training split. Disgust has
+  436 images in the official training set, 392 after the validation split. We therefore use an inverse-frequency class-weighted loss and report
   **macro-F1** as the main metric, because accuracy rewards predicting the majority classes.
 - **Label noise.** 3,369 images have at least one exact pixel duplicate (1,516 distinct images). In 57 of
   these duplicate groups the copies carry **different labels**, direct evidence of annotation noise.

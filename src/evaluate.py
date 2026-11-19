@@ -97,6 +97,9 @@ def main():
     with open(out / "metrics.json", "w") as f:
         json.dump(metrics, f, indent=2, default=str)
 
+    # raw counts (aggregate, safe to commit for RAF-DB); src.cross_dataset compares these across datasets
+    counts = confusion_matrix(y, p, labels=range(len(CLASSES)))
+    pd.DataFrame(counts, index=CLASSES, columns=CLASSES).to_csv(out / "confusion.csv", index_label="true")
     cm = confusion_matrix(y, p, labels=range(len(CLASSES)), normalize="true")
     plt.figure(figsize=(7, 6))
     sns.heatmap(cm, annot=True, fmt=".2f", cmap="Blues", xticklabels=CLASSES, yticklabels=CLASSES)

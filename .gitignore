@@ -11,7 +11,8 @@ results/**/*.pth
 # RAF-DB licence: no redistribution of images or per-image labels (Grad-CAMs show faces, predictions hold labels)
 results/**/explain_rafdb/
 results/**/eval_rafdb/predictions.csv
-results_*.zip
+# per-image predictions are large and regenerable; only aggregate metrics are committed
+results/**/predictions.csv
 wandb/
 
 # Kaggle output downloads

@@ -1,0 +1,17 @@
+run,model,true,predicted,fer_rate,raf_rate,increase
+cnn_best,CNN (tuned),disgust,angry,0.180,0.525,0.345
+cnn_best,CNN (tuned),fear,happy,0.015,0.311,0.296
+cnn_best,CNN (tuned),surprise,neutral,0.024,0.258,0.234
+cnn_best,CNN (tuned),surprise,angry,0.029,0.158,0.129
+cnn_best,CNN (tuned),disgust,sad,0.045,0.169,0.124
+cnn_best,CNN (tuned),angry,happy,0.029,0.136,0.107
+cnn_best,CNN (tuned),neutral,angry,0.059,0.154,0.095
+cnn_best,CNN (tuned),disgust,neutral,0.018,0.094,0.076
+resnet50,ResNet-50,disgust,sad,0.050,0.250,0.200
+resnet50,ResNet-50,disgust,angry,0.210,0.380,0.170
+resnet50,ResNet-50,surprise,neutral,0.020,0.190,0.170
+resnet50,ResNet-50,disgust,neutral,0.030,0.160,0.130
+resnet50,ResNet-50,surprise,sad,0.010,0.110,0.100
+resnet50,ResNet-50,surprise,fear,0.090,0.180,0.090
+resnet50,ResNet-50,neutral,sad,0.120,0.210,0.090
+resnet50,ResNet-50,fear,happy,0.020,0.090,0.070

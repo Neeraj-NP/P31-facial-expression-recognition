@@ -9,15 +9,19 @@ All models are trained on FER-2013 only. RAF-DB (3,068 test images) is never use
 model selection, so the drop from FER-2013 to RAF-DB measures how well each model transfers. `cnn_best` and `resnet50` are the configurations selected on FER-2013 validation macro-F1;
 the other rows are baselines or tuning runs, shown for comparison.
 
-| Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Accuracy drop | Macro-F1 drop |
-|---|---|---|---|---|
-| CNN baseline (untuned, `cnn`) | 67.6% / 0.648 | 65.1% / 0.480 | 2.5 pts | 0.168 |
-| CNN, tuned (`cnn_best`) | 70.2% / 0.684 | 61.2% / 0.443 | 9.0 pts | 0.241 |
-| ResNet-18 (`resnet`) | 69.1% / 0.664 | 60.4% / 0.449 | 8.7 pts | 0.215 |
-| ResNet-18, 224px (`resnet_224`) | 70.3% / 0.675 | 61.3% / 0.465 | 9.0 pts | 0.210 |
-| ResNet-18, frozen backbone | 34.5% / 0.316 | 36.5% / 0.233 | -2.0 pts* | 0.083* |
-| **ResNet-50** (`resnet50`) | 70.1% / **0.687** | 64.2% / **0.493** | 5.9 pts | 0.194 |
-| ViT | TODO | TODO | TODO | TODO |
+| Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Accuracy drop | Macro-F1 drop | Balanced-acc. drop |
+|---|---|---|---|---|---|
+| CNN baseline (untuned, `cnn`) | 67.6% / 0.648 | 65.1% / 0.480 | 2.5 pts | 0.167 | 16.5 pts |
+| CNN, tuned (`cnn_best`) | 70.2% / 0.684 | 61.2% / 0.443 | 9.0 pts | 0.241 | 21.7 pts |
+| ResNet-18 (`resnet`) | 69.1% / 0.664 | 60.4% / 0.449 | 8.7 pts | 0.215 | 20.4 pts |
+| ResNet-18, 224px (`resnet_224`) | 70.3% / 0.675 | 61.3% / 0.465 | 9.0 pts | 0.210 | 19.6 pts |
+| ResNet-18, frozen backbone | 34.5% / 0.316 | 36.5% / 0.233 | -2.0 pts* | 0.083* | 12.9 pts* |
+| **ResNet-50** (`resnet50`) | 70.1% / **0.687** | 64.2% / **0.493** | 5.9 pts | 0.194 | 15.2 pts |
+| ViT | TODO | TODO | TODO | TODO | TODO |
+
+Balanced accuracy is the mean per-class recall; unlike accuracy it is not inflated by RAF-DB being 39%
+happy. Full table, per-emotion figures and confusion matrices: `results/cross_dataset_analysis.md`
+(`python -m src.cross_dataset`).
 
 \*The frozen model is weak on both datasets, so its small "drop" is not evidence of good transfer.
 
@@ -26,9 +30,19 @@ RAF-DB, macro-F1 0.493 vs 0.443, and a smaller drop in both. Across all rows it 
 macro-F1, but the untuned CNN baseline (not selected) scores 65.1% / 0.480 and loses less still.
 ResNet-50's advantage over a simple CNN is therefore small (macro-F1 +0.013, one seed), not a clear win.
 Accuracy also flatters every
-model here, because RAF-DB is 39% happy; the macro-F1 drop is the better guide. The CNN shows a
-trade-off: tuning on FER-2013 raised FER-2013 accuracy (67.6% to 70.2%) and lowered RAF-DB accuracy
-(65.1% to 61.2%) (`cnn_tuning.md`).
+model here, because RAF-DB is 39% happy: balanced accuracy drops 15-22 points for every trained
+model, against 2.5-9 for plain accuracy, so the macro-F1 and balanced-accuracy drops are the better
+guide. The CNN shows a trade-off: tuning on FER-2013 raised FER-2013 accuracy (67.6% to 70.2%) and
+lowered RAF-DB accuracy (65.1% to 61.2%) (`cnn_tuning.md`).
+
+**Which emotions transfer.** Happy, sad and neutral keep their F1 on RAF-DB (changes of 0.10 or
+less for both selected models). Disgust collapses (F1 0.66 to 0.13 for the tuned CNN, 0.68 to 0.16
+for ResNet-50) and is mostly read as anger, and surprise, fear and angry lose 0.19-0.37 F1. Surprise
+is under-predicted rather than confused at random: its RAF-DB recall falls to 0.29 (CNN) and 0.38
+(ResNet-50) while precision stays high (0.91 / 0.83). The tuned CNN also over-predicts anger on RAF-DB
+(484 predictions against 162 true angry faces). ResNet-50's better transfer comes from surprise, fear
+and angry, not from the large classes. The small classes (fear 74, disgust 160, angry 162 images)
+make these per-class rates uncertain.
 
 ## Subgroup bias audit
 

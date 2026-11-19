@@ -7,11 +7,11 @@ cnn_best,CNN (tuned),disgust,sad,0.045,0.169,0.124
 cnn_best,CNN (tuned),angry,happy,0.029,0.136,0.107
 cnn_best,CNN (tuned),neutral,angry,0.059,0.154,0.095
 cnn_best,CNN (tuned),disgust,neutral,0.018,0.094,0.076
-resnet50,ResNet-50,disgust,sad,0.050,0.250,0.200
-resnet50,ResNet-50,disgust,angry,0.210,0.380,0.170
-resnet50,ResNet-50,surprise,neutral,0.020,0.190,0.170
-resnet50,ResNet-50,disgust,neutral,0.030,0.160,0.130
-resnet50,ResNet-50,surprise,sad,0.010,0.110,0.100
-resnet50,ResNet-50,surprise,fear,0.090,0.180,0.090
-resnet50,ResNet-50,neutral,sad,0.120,0.210,0.090
-resnet50,ResNet-50,fear,happy,0.020,0.090,0.070
+resnet50,ResNet-50,disgust,sad,0.045,0.250,0.205
+resnet50,ResNet-50,disgust,angry,0.207,0.375,0.168
+resnet50,ResNet-50,surprise,neutral,0.024,0.191,0.167
+resnet50,ResNet-50,disgust,neutral,0.027,0.163,0.135
+resnet50,ResNet-50,surprise,sad,0.012,0.109,0.097
+resnet50,ResNet-50,surprise,fear,0.090,0.176,0.086
+resnet50,ResNet-50,neutral,sad,0.123,0.207,0.084
+resnet50,ResNet-50,fear,happy,0.018,0.095,0.077

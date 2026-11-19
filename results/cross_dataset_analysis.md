@@ -97,8 +97,6 @@ FER-2013 training examples, so the models learn the least general features for t
 
 - One training seed per configuration. Differences of a few F1 hundredths between models are within noise.
 - Small RAF-DB classes (fear 74, disgust 160, angry 162) make their per-class rates uncertain.
-- ResNet-50's `confusion.csv` files hold the row-normalised values from its committed
-  `confusion_matrix.png` (2 decimals); their diagonals match `metrics.json` recall to within 0.005.
-  The CNN files are exact counts from the evaluation predictions. New evaluations write exact counts
-  (`src/evaluate.py` now saves `confusion.csv`).
+- All `confusion.csv` files, ResNet-50's included, are exact counts built from the evaluation
+  predictions. New evaluations write them directly (`src/evaluate.py` now saves `confusion.csv`).
 - Per-image predictions are not committed (RAF-DB licence); the confusion counts are aggregate.

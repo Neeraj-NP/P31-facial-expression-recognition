@@ -59,14 +59,14 @@ Optional keys (defaults reproduce the baselines):
 ## Results
 
 Trained on FER-2013, tested on the FER-2013 test set (in-domain) and the RAF-DB test set (cross-dataset,
-never used for training or model selection). Selected configurations, chosen on FER-2013 validation
-macro-F1; ViT results are pending.
+never used for training or model selection). The CNN and ResNet rows are the configurations selected on
+FER-2013 validation macro-F1; ViT-S is a single untuned baseline run, so its row is indicative.
 
 | Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Balanced-acc drop | Gender gap (F-M) | Age gap |
 |---|---|---|---|---|---|
 | CNN from scratch (`cnn_best`) | 70.2% / 0.684 | 61.2% / 0.443 | 21.7 pts | 10.4 pts | 15.2 pts |
 | ResNet-50, ImageNet-pretrained (`resnet50`) | 70.1% / 0.687 | 64.2% / 0.493 | 15.2 pts | 8.1 pts | 11.7 pts |
-| ViT-S (`vit_small`) | pending | pending | | | |
+| ViT-S, ImageNet-pretrained, untuned (`vit_small`) | 70.1% / 0.661 | 62.8% / 0.475 | 18.4 pts | 5.4 pts | 14.6 pts |
 
 - **Cross-dataset transfer is the main weakness.** Balanced accuracy (mean per-class recall) falls by
   15-22 points on RAF-DB; plain accuracy hides much of this because RAF-DB is 39% happy, the class that
@@ -74,7 +74,8 @@ macro-F1; ViT results are pending.
   fear and anger also drop sharply. Details: [results/cross_dataset_analysis.md](results/cross_dataset_analysis.md).
 - **In-domain gains did not transfer.** Tuning the CNN raised FER-2013 accuracy from 67.6% to 70.2% but
   lowered RAF-DB accuracy from 65.1% to 61.2% ([results/cnn_tuning.md](results/cnn_tuning.md)).
-- **Every model is less accurate on men than on women** (8-10 points, p < 0.001). Fine-tuning on RAF-DB
+- **Every model is less accurate on men than on women** (8-10 points for the CNN and ResNets, 5.4 for
+  ViT-S; all p < 0.01). Fine-tuning on RAF-DB
   halves the gap; subgroup-balanced sampling adds little on top
   ([results/resnet_mitigation.md](results/resnet_mitigation.md)).
 

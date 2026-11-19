@@ -70,7 +70,7 @@ confusions that become more common on RAF-DB. The largest increases (`confusion_
 | disgust -> angry | 0.18 -> 0.53 | 0.21 -> 0.38 |
 | disgust -> sad | 0.05 -> 0.17 | 0.05 -> 0.25 |
 | surprise -> neutral | 0.02 -> 0.26 | 0.02 -> 0.19 |
-| fear -> happy | 0.01 -> 0.31 | 0.02 -> 0.09 |
+| fear -> happy | 0.01 -> 0.31 | 0.02 -> 0.10 |
 | surprise -> angry | 0.03 -> 0.16 | 0.03 -> 0.08 |
 
 1. **Disgust is read as anger (and sadness).** The disgust -> angry confusion already exists in-domain
@@ -84,7 +84,7 @@ confusions that become more common on RAF-DB. The largest increases (`confusion_
    faces (precision 0.24), drawing from disgust, surprise, neutral and sad. Tuning made this worse: the
    untuned baseline predicts angry 381 times. This is one concrete way the tuned CNN's FER-2013 gains
    failed to carry over.
-4. **Fear -> happy is a CNN problem.** 31% of RAF-DB fear faces are called happy by the CNN, against 9%
+4. **Fear -> happy is a CNN problem.** 31% of RAF-DB fear faces are called happy by the CNN, against 10%
    for ResNet-50, which keeps fear recall almost unchanged (0.52 -> 0.50). Fear has only 74 RAF-DB test
    images, so these rates are noisy.
 

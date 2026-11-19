@@ -19,22 +19,28 @@ Put the datasets in `data/` as described in [data/README.md](data/README.md).
 ## Usage
 
 ```powershell
-# 1. train (results/<model>_<timestamp>/ gets config.yaml, history.csv, best.pt)
-python -m src.train --config configs/cnn.yaml
-python -m src.train --config configs/resnet.yaml
-python -m src.train --config configs/vit.yaml
+# 1. train: results/<run-name>/ gets config.yaml, history.csv, best.pt
+python -m src.train --config configs/cnn_best.yaml --run-name cnn_best
+python -m src.train --config configs/resnet50.yaml --run-name resnet50
+python -m src.train --config configs/vit_small.yaml --run-name vit_small
 
 # 2. evaluate: in-domain, then cross-dataset + subgroup audit
-python -m src.evaluate --run results/<run> --dataset fer2013
-python -m src.evaluate --run results/<run> --dataset rafdb
+python -m src.evaluate --run results/cnn_best --dataset fer2013
+python -m src.evaluate --run results/cnn_best --dataset rafdb
 
-# 3. saliency maps
-python -m src.explain --run results/<run> --dataset fer2013
-python -m src.explain --run results/<run> --dataset rafdb --group-by gender
+# 3. compare models: cross-dataset table, per-emotion drop, confusion shift; bias gap table
+python -m src.cross_dataset
+python -m src.bias_report --runs results/cnn_best results/resnet50 results/vit_small
+
+# 4. saliency maps
+python -m src.explain --run results/cnn_best --dataset fer2013
+python -m src.explain --run results/cnn_best --dataset rafdb --group-by gender
 ```
 
-Every evaluation writes `metrics.json`, `predictions.csv`, `confusion_matrix.png` and (RAF-DB)
-`subgroup_audit.csv` with accuracy / macro-F1 and 95% bootstrap CIs per gender, race and age group.
+Without `--run-name`, runs are saved as `results/<model>_<timestamp>/`. Every evaluation writes
+`metrics.json`, `confusion.csv`, `confusion_matrix.png`, a local `predictions.csv` (not committed) and,
+for RAF-DB, `subgroup_audit.csv` with accuracy / macro-F1 and 95% bootstrap CIs per gender, race and
+age group. Training needs a GPU; we trained on Kaggle T4s with `notebooks/kaggle_train.ipynb`.
 
 ## Experiments
 
@@ -49,6 +55,32 @@ Optional keys (defaults reproduce the baselines):
 | `model.dropout` | `0.4` | CNN classifier dropout |
 | `model.block_dropout` | `0.25` | CNN dropout after each conv block |
 | `train.class_weights` | `true` | inverse-frequency class weights in the loss |
+
+## Results
+
+Trained on FER-2013, tested on the FER-2013 test set (in-domain) and the RAF-DB test set (cross-dataset,
+never used for training or model selection). Selected configurations, chosen on FER-2013 validation
+macro-F1; ViT results are pending.
+
+| Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Balanced-acc drop | Gender gap (F-M) | Age gap |
+|---|---|---|---|---|---|
+| CNN from scratch (`cnn_best`) | 70.2% / 0.684 | 61.2% / 0.443 | 21.7 pts | 10.4 pts | 15.2 pts |
+| ResNet-50, ImageNet-pretrained (`resnet50`) | 70.1% / 0.687 | 64.2% / 0.493 | 15.2 pts | 8.1 pts | 11.7 pts |
+| ViT-S (`vit_small`) | pending | pending | | | |
+
+- **Cross-dataset transfer is the main weakness.** Balanced accuracy (mean per-class recall) falls by
+  15-22 points on RAF-DB; plain accuracy hides much of this because RAF-DB is 39% happy, the class that
+  transfers best. Disgust collapses (F1 0.66 -> 0.13 for the CNN; it is read as anger), and surprise,
+  fear and anger also drop sharply. Details: [results/cross_dataset_analysis.md](results/cross_dataset_analysis.md).
+- **In-domain gains did not transfer.** Tuning the CNN raised FER-2013 accuracy from 67.6% to 70.2% but
+  lowered RAF-DB accuracy from 65.1% to 61.2% ([results/cnn_tuning.md](results/cnn_tuning.md)).
+- **Every model is less accurate on men than on women** (8-10 points, p < 0.001). Fine-tuning on RAF-DB
+  halves the gap; subgroup-balanced sampling adds little on top
+  ([results/resnet_mitigation.md](results/resnet_mitigation.md)).
+
+Gaps are best-minus-worst group accuracy on RAF-DB; see [results/bias_report/](results/bias_report/) for
+intervals and p-values, and [results/resnet_tuning.md](results/resnet_tuning.md) for the ResNet runs.
+FER-2013 test numbers are slightly optimistic because about 7% of its test images also appear in training.
 
 ## Labels
 

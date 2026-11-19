@@ -74,7 +74,7 @@ confusions that become more common on RAF-DB. The largest increases (`confusion_
 | surprise -> angry | 0.03 -> 0.16 | 0.03 -> 0.08 |
 
 1. **Disgust is read as anger (and sadness).** The disgust -> angry confusion already exists in-domain
-   (about 0.2) and grows on RAF-DB. FER-2013 has only 436 disgust training images (1.5%), so the
+   (about 0.2) and grows on RAF-DB. FER-2013 has only 436 disgust images in its official training set (392 after our validation split, 1.5%), so the
    models' notion of disgust is narrow, and RAF-DB's disgust faces mostly fall outside it.
 2. **Surprise is under-predicted, not mislabelled at random.** On RAF-DB, surprise recall falls to
    0.29 (CNN) / 0.38 (ResNet-50) while precision stays high (0.91 / 0.83): when the models say

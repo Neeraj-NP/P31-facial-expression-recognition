@@ -14,8 +14,11 @@ We compare three architectures of increasing size and pretraining, trained on th
   the final fully-connected layer replaced by a dropout + linear head for 7 classes.
   Inputs are resized to 112×112 (or 224×224, see tuning below) and 3-channel, using
   ImageNet normalisation, so the pretrained features are used as intended.
-- **ViT (fine-tuning).** An ImageNet-pretrained Vision Transformer (`timm`,
-  `vit_small`/`vit_base_patch16_224`), fine-tuned end-to-end at 224×224.
+- **ViT (fine-tuning).** An ImageNet-pretrained ViT-Small with 16×16 patches (`timm`
+  `vit_small_patch16_224`, about 22M parameters) with a new 7-class head, fine-tuned
+  end-to-end at 224×224 (3-channel, ImageNet normalisation). The reported run (`vit_small`)
+  uses learning rate 5e-5, weight decay 0.05 and batch size 64 for 15 epochs; it is the
+  untuned baseline configuration, since the ViT tuning experiments were not completed.
 
 All three share one training script (`src/train.py`) and one evaluation script
 (`src/evaluate.py`), differing only through a YAML config, so results are directly

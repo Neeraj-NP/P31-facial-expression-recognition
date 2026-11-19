@@ -13,3 +13,6 @@ results/**/explain_rafdb/
 results/**/eval_rafdb/predictions.csv
 results_*.zip
 wandb/
+
+# Kaggle output downloads
+results_*.zip

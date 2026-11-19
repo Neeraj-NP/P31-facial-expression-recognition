@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import timm.optim
 import torch
 import torch.nn as nn
 import yaml
@@ -24,6 +25,19 @@ def class_weights(labels, num_classes):
     counts = np.bincount(labels, minlength=num_classes).astype(float)
     w = counts.sum() / (num_classes * np.maximum(counts, 1))
     return torch.tensor(w, dtype=torch.float32)
+
+
+def build_optimizer(model, t):
+    """AdamW; with train.layer_decay (ViT) earlier blocks get a smaller LR than the head."""
+    if not t.get("layer_decay"):
+        return torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
+    opt = timm.optim.create_optimizer_v2(
+        model, opt="adamw", lr=t["lr"], weight_decay=t["weight_decay"], layer_decay=t["layer_decay"])
+    # timm only stores the per-group scale in "lr_scale" and applies it in its own scheduler.
+    # We use torch's LambdaLR, so bake the scale into each group's lr here.
+    for g in opt.param_groups:
+        g["lr"] = t["lr"] * g.get("lr_scale", 1.0)
+    return opt
 
 
 def run_epoch(model, loader, device, criterion, optimizer=None, scaler=None, scheduler=None):
@@ -88,7 +102,7 @@ def main():
     weight = class_weights(frames["train"]["label"].values, m["num_classes"]).to(device) \
         if t.get("class_weights") else None
     criterion = nn.CrossEntropyLoss(weight=weight, label_smoothing=t.get("label_smoothing", 0.0))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
+    optimizer = build_optimizer(model, t)
 
     # linear warmup then cosine decay, stepped per batch
     total_steps = t["epochs"] * len(train_loader)

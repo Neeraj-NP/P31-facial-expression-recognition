@@ -1,0 +1,23 @@
+# ViT tuning (#8): LR sweep, lr 3e-5 (only change vs vit_small.yaml)
+seed: 42
+data:
+  fer2013_root: data/fer2013
+  rafdb_root: data/rafdb
+  val_frac: 0.1
+  img_size: 224
+  channels: 3
+  num_workers: 4
+model:
+  name: vit_small_patch16_224
+  num_classes: 7
+  pretrained: true
+train:
+  epochs: 15
+  batch_size: 64
+  lr: 0.00003
+  weight_decay: 0.05
+  warmup_epochs: 1
+  label_smoothing: 0.1
+  class_weights: true
+  amp: true
+  early_stop_patience: 5

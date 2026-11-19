@@ -1,0 +1,25 @@
+# Tuning experiment: frozen backbone (linear probe) vs resnet.yaml's full fine-tuning.
+# Only change vs resnet.yaml: model.freeze_backbone.
+seed: 42
+data:
+  fer2013_root: data/fer2013
+  rafdb_root: data/rafdb
+  val_frac: 0.1
+  img_size: 112
+  channels: 3
+  num_workers: 4
+model:
+  name: resnet18
+  num_classes: 7
+  pretrained: true
+  freeze_backbone: true
+train:
+  epochs: 30
+  batch_size: 64
+  lr: 0.0003
+  weight_decay: 0.0001
+  warmup_epochs: 1
+  label_smoothing: 0.1
+  class_weights: true
+  amp: true
+  early_stop_patience: 8

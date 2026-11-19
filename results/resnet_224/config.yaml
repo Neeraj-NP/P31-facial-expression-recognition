@@ -1,0 +1,22 @@
+data:
+  channels: 3
+  fer2013_root: /kaggle/input/datasets/msambare/fer2013
+  img_size: 224
+  num_workers: 2
+  rafdb_root: /kaggle/input/datasets/neer768/rafdb-basic
+  val_frac: 0.1
+model:
+  name: resnet18
+  num_classes: 7
+  pretrained: true
+seed: 42
+train:
+  amp: true
+  batch_size: 64
+  class_weights: true
+  early_stop_patience: 8
+  epochs: 30
+  label_smoothing: 0.1
+  lr: 0.0003
+  warmup_epochs: 1
+  weight_decay: 0.0001

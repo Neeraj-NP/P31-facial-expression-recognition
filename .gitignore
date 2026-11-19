@@ -8,6 +8,10 @@ data/*
 !data/README.md
 results/**/*.pt
 results/**/*.pth
+# RAF-DB licence: no redistribution of images or per-image labels (Grad-CAMs show faces, predictions hold labels)
+results/**/explain_rafdb/
+results/**/eval_rafdb/predictions.csv
+results_*.zip
 wandb/
 
 # Kaggle output downloads

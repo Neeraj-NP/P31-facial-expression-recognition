@@ -12,10 +12,14 @@ We compare three architectures of increasing size and pretraining, trained on th
   pretrained knowledge of natural images; serves as the from-scratch baseline.
 - **ResNet-18/50 (transfer learning).** ImageNet-pretrained `torchvision` ResNet with
   the final fully-connected layer replaced by a dropout + linear head for 7 classes.
-  Inputs are resized to 112×112 (or 224×224, see tuning below) and 3-channel, using
-  ImageNet normalisation, so the pretrained features are used as intended.
-- **ViT (fine-tuning).** An ImageNet-pretrained Vision Transformer (`timm`,
-  `vit_small`/`vit_base_patch16_224`), fine-tuned end-to-end at 224×224.
+  Inputs are resized to 112×112 (or 224×224, see tuning below); the greyscale image is
+  replicated to 3 channels and ImageNet-normalised to match the input format the pretrained
+  weights expect (the models never see colour; see the Data section).
+- **ViT (fine-tuning).** An ImageNet-pretrained ViT-Small with 16×16 patches (`timm`
+  `vit_small_patch16_224`, about 22M parameters) with a new 7-class head, fine-tuned
+  end-to-end at 224×224 (greyscale replicated to 3 channels, ImageNet normalisation). The reported run (`vit_small`)
+  uses learning rate 5e-5, weight decay 0.05 and batch size 64 for 15 epochs; it is the
+  untuned baseline configuration, since the ViT tuning experiments were not completed.
 
 All three share one training script (`src/train.py`) and one evaluation script
 (`src/evaluate.py`), differing only through a YAML config, so results are directly
@@ -31,9 +35,10 @@ Every model is trained with the same recipe, parameterised per-model in
   every batch.
 - **Loss:** cross-entropy with label smoothing (0.1) and inverse-frequency class
   weights, to counter FER-2013's class imbalance (disgust is ~17x rarer than happy).
+- **Input format:** every image, from both datasets, is converted to greyscale first;
+  1 channel for the CNN, and replicated to 3 ImageNet-normalised channels for ResNet/ViT.
 - **Data augmentation:** random horizontal flip, affine (rotation/translation/scale),
-  colour jitter, and random erasing on the training split only; grayscale 1-channel
-  for the CNN, 3-channel ImageNet-normalised for ResNet/ViT.
+  brightness/contrast jitter, and random erasing on the training split only.
 - **Mixed precision (AMP)** on GPU, for speed.
 - **Model selection:** the checkpoint with the best validation macro-F1 is kept
   (`best.pt`); training stops early if macro-F1 doesn't improve for

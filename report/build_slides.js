@@ -143,8 +143,8 @@ pres.addSection({ title: "Setup" });
     "CNN: about 5M parameters, trained from scratch (Neeraj). ResNet-18/50: ImageNet-pretrained, new 7-class head, 112 px (Rakshita). ViT-Small/16: ImageNet-pretrained transformer, about 22M parameters, 224 px, fine-tuned end-to-end; one untuned baseline run (Pawan). All three use the same training and evaluation scripts, selected by a YAML config.", "Setup");
   const cols = [
     ["CNN from scratch", ["About 5M parameters", "4 conv blocks, 48×48 grayscale", "No pretraining"]],
-    ["ResNet-18 / 50", ["ImageNet-pretrained, new 7-class head", "112 px, 3-channel input", "Fully fine-tuned"]],
-    ["ViT-Small", ["ImageNet-pretrained (timm), about 22M parameters", "224 px input", "Fully fine-tuned; untuned baseline"]],
+    ["ResNet-18 / 50", ["ImageNet-pretrained, new 7-class head", "112 px greyscale, copied to 3 channels", "Fully fine-tuned"]],
+    ["ViT-Small", ["ImageNet-pretrained (timm), about 22M parameters", "224 px greyscale, copied to 3 channels", "Fully fine-tuned; untuned baseline"]],
   ];
   cols.forEach((c, i) => {
     const x = 0.5 + i * 3.1;
@@ -162,7 +162,7 @@ pres.addSection({ title: "Setup" });
   const rows = [
     ["Optimiser", "AdamW, short warmup, cosine decay"],
     ["Loss", "Cross-entropy, label smoothing 0.1, class weights"],
-    ["Augmentation", "Flip, small affine, colour jitter, random erasing"],
+    ["Augmentation", "Flip, small affine, brightness/contrast jitter, random erasing"],
     ["Model selection", "Best validation macro-F1, with early stopping"],
     ["Comparison", "Same pipeline, split and metric for all models"],
   ];

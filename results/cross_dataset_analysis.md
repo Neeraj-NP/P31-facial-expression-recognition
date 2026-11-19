@@ -88,8 +88,9 @@ confusions that become more common on RAF-DB. The largest increases (`confusion_
    for ResNet-50, which keeps fear recall almost unchanged (0.52 -> 0.50). Fear has only 74 RAF-DB test
    images, so these rates are noisy.
 
-Why these classes? Plausible explanations, not tested here: RAF-DB images are colour, higher-resolution
-and in-the-wild while FER-2013 is 48x48 greyscale; the two datasets were labelled by different
+Why these classes? Plausible explanations, not tested here: RAF-DB images are aligned, higher-resolution
+in-the-wild photos while FER-2013 is 48x48 and noisier (colour is not a factor: every model receives
+greyscale input from both datasets); the two datasets were labelled by different
 annotators with different conventions; and the minority emotions (disgust, fear) have the fewest
 FER-2013 training examples, so the models learn the least general features for them.
 

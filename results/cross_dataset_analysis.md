@@ -34,7 +34,8 @@ baseline run. Balanced accuracy is the mean per-class recall.
   15.2 vs 21.7 points). The untuned CNN baseline transfers about as well (16.5), so this is not a clean
   "bigger pretrained model transfers better" result (see `report/results_and_discussion.md`).
 - **ViT-S sits in between** (balanced-accuracy drop 18.4): it matches ResNet-50 on FER-2013 accuracy but
-  transfers less well. With one untuned run, this does not show how a tuned ViT would compare.
+  scores lower on RAF-DB and loses more balanced accuracy (its macro-F1 drop, 0.186, is slightly smaller
+  than ResNet-50's 0.194). With one untuned run, this does not show how a tuned ViT would compare.
 - The frozen-backbone model's small drop reflects that it is weak on both datasets, not that it transfers well.
 
 ## 2. Which emotions transfer worst?
@@ -53,10 +54,12 @@ Per-class F1, FER-2013 -> RAF-DB (change in brackets):
 | surprise | 329 | 0.81 -> 0.44 (-0.37) | 0.81 -> 0.52 (-0.29) | 0.81 -> 0.54 (-0.27) |
 | neutral | 680 | 0.67 -> 0.57 (-0.10) | 0.67 -> 0.61 (-0.06) | 0.68 -> 0.55 (-0.13) |
 
-- **Happy, sad and neutral transfer** (F1 change of 0.10 or less for both models). These are the three
+- **Happy, sad and neutral transfer** (F1 change of 0.10 or less for the two selected models). These are the three
   largest RAF-DB classes, which is why accuracy holds up.
-- **Disgust collapses** in both models (F1 -0.53; recall 0.70 -> 0.10 for the CNN, 0.68 -> 0.10 for
-  ResNet-50). It is the worst-transferring emotion for every model we trained.
+- **Disgust collapses** in both selected models (F1 -0.53; recall 0.70 -> 0.10 for the CNN, 0.68 -> 0.10 for
+  ResNet-50). It has the lowest RAF-DB F1 of any emotion for every fully trained model, and the largest
+  drop for all of them except ViT-S, where fear drops slightly more (-0.34 vs -0.33). (The frozen-backbone
+  run is weak everywhere and follows neither pattern.)
 - **Surprise, fear and angry also lose 0.19-0.37 F1.** ResNet-50 loses less than the CNN on each of
   them; that, not happy/sad/neutral, is where its better transfer comes from.
 - **ViT-S follows the same pattern.** Its smaller disgust drop (-0.33) is because it starts lower on

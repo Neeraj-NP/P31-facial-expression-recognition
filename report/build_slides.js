@@ -140,11 +140,11 @@ pres.addSection({ title: "Setup" });
 // ---------- 4. Models ----------
 {
   const s = content("Three models, one pipeline",
-    "CNN: about 5M parameters, trained from scratch (Neeraj). ResNet-18/50: ImageNet-pretrained, new 7-class head, 112 px (Rakshita). ViT-Small/16: ImageNet-pretrained transformer, about 22M parameters, 224 px, fine-tuned end-to-end; one untuned baseline run (Pawan). All three use the same training and evaluation scripts, selected by a YAML config.", "Setup");
+    "CNN: about 5M parameters, trained from scratch (Neeraj). ResNet-18/50: ImageNet-pretrained, new 7-class head, 112 px (Rakshita). ViT-Base/16: ImageNet-pretrained transformer, about 86M parameters, 224 px, fine-tuned end-to-end and selected from a small tuning sweep (Pawan). All three use the same training and evaluation scripts, selected by a YAML config.", "Setup");
   const cols = [
     ["CNN from scratch", ["About 5M parameters", "4 conv blocks, 48×48 grayscale", "No pretraining"]],
     ["ResNet-18 / 50", ["ImageNet-pretrained, new 7-class head", "112 px greyscale, copied to 3 channels", "Fully fine-tuned"]],
-    ["ViT-Small", ["ImageNet-pretrained (timm), about 22M parameters", "224 px greyscale, copied to 3 channels", "Fully fine-tuned; untuned baseline"]],
+    ["ViT-Base", ["ImageNet-pretrained (timm), about 86M parameters", "224 px greyscale, copied to 3 channels", "Fully fine-tuned; chosen from 6 runs on validation macro-F1"]],
   ];
   cols.forEach((c, i) => {
     const x = 0.5 + i * 3.1;
@@ -192,29 +192,29 @@ pres.addSection({ title: "Results" });
 
 // ---------- 7. Transfer ----------
 {
-  const s = content("ResNet-50 beats the tuned CNN on RAF-DB",
-    "FER-2013 to RAF-DB, accuracy drop / macro-F1 drop: untuned CNN baseline 67.6 to 65.1 (2.5) / 0.648 to 0.480 (0.167); tuned CNN 70.2 to 61.2 (9.0) / 0.684 to 0.443 (0.241); ResNet-18 69.1 to 60.4 (8.7) / 0.664 to 0.449 (0.215); ResNet-18 at 224 px 70.3 to 61.3 (9.0) / 0.675 to 0.465 (0.210); ResNet-50 70.1 to 64.2 (5.9) / 0.687 to 0.493 (0.194). Of the two configurations selected on FER-2013 validation (tuned CNN and ResNet-50), ResNet-50 transfers better, but the untuned CNN baseline (not selected) loses even less and scores 65.1% / 0.480 on RAF-DB, so ResNet-50's advantage over a simple CNN is small (macro-F1 +0.013, one seed). RAF-DB is 39% happy, which flatters accuracy, so the macro-F1 drop is the better guide. ViT-S (one untuned run) 70.1 to 62.8 (7.4) / 0.661 to 0.475 (0.186): same FER-2013 accuracy as ResNet-50 but lower on RAF-DB; a tuned ViT might do better.", "Results");
+  const s = content("ResNet-50 and ViT-B beat the tuned CNN",
+    "FER-2013 to RAF-DB, accuracy drop / macro-F1 drop: untuned CNN baseline 67.6 to 65.1 (2.5) / 0.648 to 0.480 (0.167); tuned CNN 70.2 to 61.2 (9.0) / 0.684 to 0.443 (0.241); ResNet-18 69.1 to 60.4 (8.7) / 0.664 to 0.449 (0.215); ResNet-18 at 224 px 70.3 to 61.3 (9.0) / 0.675 to 0.465 (0.210); ResNet-50 70.1 to 64.2 (5.9) / 0.687 to 0.493 (0.194). ViT-B 70.7 to 64.7 (6.0) / 0.679 to 0.490 (0.189). Of the three configurations selected on FER-2013 validation (tuned CNN, ResNet-50, ViT-B), ResNet-50 and ViT-B transfer better than the CNN and are within noise of each other (one seed each; in-domain all three are tied at 70.1-70.7%). The untuned CNN baseline (not selected) loses even less and scores 65.1% / 0.480 on RAF-DB, so the pretrained models' advantage over a simple CNN is small (macro-F1 +0.010 to +0.013). RAF-DB is 39% happy, which flatters accuracy, so the macro-F1 drop is the better guide. The ViT-S baseline was lower (62.8% / 0.475).", "Results");
   s.addChart(pres.charts.BAR, [
-    { name: "Accuracy drop", labels: ["CNN untuned", "CNN tuned", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-S untuned"], values: [2.5, 9.0, 8.7, 9.0, 5.9, 7.4] },
-    { name: "Macro-F1 drop (points)", labels: ["CNN untuned", "CNN tuned", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-S untuned"], values: [16.7, 24.1, 21.5, 21.0, 19.4, 18.6] },
+    { name: "Accuracy drop", labels: ["CNN untuned", "CNN tuned", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-B"], values: [2.5, 9.0, 8.7, 9.0, 5.9, 6.0] },
+    { name: "Macro-F1 drop (points)", labels: ["CNN untuned", "CNN tuned", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-B"], values: [16.7, 24.1, 21.5, 21.0, 19.4, 18.9] },
   ], { ...chartBase, barDir: "col", barGapWidthPct: 50, chartColors: [HEX.accent6, HEX.accent1], title: "Lost on RAF-DB vs FER-2013 (points)", showLegend: true, legendPos: "b", valAxisMaxVal: 30, dataLabelPosition: "outEnd", catAxisLabelFontSize: 11, objectName: "Transfer chart" });
   s.addText([
-    { text: "Of the two selected configurations, ResNet-50 transfers better than the tuned CNN.", options: { bullet: true, breakLine: true } },
+    { text: "ResNet-50 and ViT-B (selected on validation) transfer better than the tuned CNN, and are level with each other.", options: { bullet: true, breakLine: true } },
     { text: "The untuned CNN baseline (not selected) transferred as well: 65.1% / 0.480.", options: { bullet: true, breakLine: true } },
     { text: "RAF-DB is 39% happy, so accuracy flatters; macro-F1 is the better guide.", options: { bullet: true, breakLine: true } },
-    { text: "ViT-S (untuned): 62.8% / 0.475 on RAF-DB, below ResNet-50.", options: { bullet: true } },
+    { text: "ViT-B: 64.7% / 0.490 on RAF-DB; ResNet-50: 64.2% / 0.493.", options: { bullet: true } },
   ], { x: 6.4, y: 1.5, w: 3.1, h: 3.5, fontSize: 14, color: C.text1, margin: 0, valign: "top", paraSpaceAfter: 8, isTextBox: true });
 }
 // ---------- 8. Gender ----------
 pres.addSection({ title: "Bias" });
 {
   const s = content("Every model is worse on men",
-    "RAF-DB accuracy by gender (female / male): CNN 65.5 / 55.1, ResNet-18 63.8 / 54.8, ResNet-18 224 px 65.0 / 56.8, ResNet-50 67.5 / 59.4, ViT-S 65.0 / 59.6. The gap is clear in all five (p < 0.001 for CNN and ResNets, p = 0.003 for ViT-S; intervals separated). ViT-S has the smallest gap, 5.4, because it is less accurate on women, not more accurate on men. We checked ResNet-50 only (python -m src.class_mix_check): men and women have different emotion mixes, but re-weighting men to the women's mix lifts their accuracy only from 59.4 to 61.5, so the mix explains about a quarter of the gap.", "Bias");
+    "RAF-DB accuracy by gender (female / male): CNN 65.5 / 55.1, ResNet-18 63.8 / 54.8, ResNet-18 224 px 65.0 / 56.8, ResNet-50 67.5 / 59.4, ViT-B 67.7 / 60.4. The gap is clear in all five (p < 0.001, intervals separated). ViT-B's gap, 7.3, is 0.8 points smaller than ResNet-50's, well inside the interval width, so we do not read it as fairer. (The ViT-S baseline had a smaller gap, 5.4, because it was less accurate on women, not more accurate on men.) We checked ResNet-50 only (python -m src.class_mix_check): men and women have different emotion mixes, but re-weighting men to the women's mix lifts their accuracy only from 59.4 to 61.5, so the mix explains about a quarter of the gap.", "Bias");
   s.addChart(pres.charts.BAR, [
-    { name: "Female", labels: ["CNN", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-S"], values: [65.5, 63.8, 65.0, 67.5, 65.0] },
-    { name: "Male", labels: ["CNN", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-S"], values: [55.1, 54.8, 56.8, 59.4, 59.6] },
+    { name: "Female", labels: ["CNN", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-B"], values: [65.5, 63.8, 65.0, 67.5, 67.7] },
+    { name: "Male", labels: ["CNN", "ResNet-18", "ResNet-18 224 px", "ResNet-50", "ViT-B"], values: [55.1, 54.8, 56.8, 59.4, 60.4] },
   ], { ...chartBase, barDir: "col", barGapWidthPct: 60, chartColors: [HEX.accent1, HEX.accent2], title: "RAF-DB accuracy by gender (%)", showLegend: true, legendPos: "b", valAxisMaxVal: 80, dataLabelPosition: "outEnd", objectName: "Gender chart" });
-  s.addText("5–10 points", { x: 6.4, y: 1.45, w: 3.1, h: 0.6, fontSize: 28, bold: true, color: C.accent2, margin: 0, fontFace: "Cambria", isTextBox: true });
+  s.addText("7–10 points", { x: 6.4, y: 1.45, w: 3.1, h: 0.6, fontSize: 28, bold: true, color: C.accent2, margin: 0, fontFace: "Cambria", isTextBox: true });
   s.addText("gap between women and men, clear in every model", { x: 6.4, y: 2.05, w: 3.1, h: 0.7, fontSize: 14, color: C.text2, margin: 0, valign: "top", isTextBox: true });
   s.addText("In ResNet-50, emotion mix explains only about a quarter of it: the model is less accurate on men even within the same emotions.",
     { x: 6.4, y: 3.0, w: 3.1, h: 1.8, fontSize: 14, color: C.text1, margin: 0, valign: "top", isTextBox: true });
@@ -223,7 +223,7 @@ pres.addSection({ title: "Bias" });
 // ---------- 9. Gap table ----------
 {
   const s = content("Age gaps vary; the gender gap stays",
-    "Gaps are best group minus worst group in accuracy points; gender is female minus male. An asterisk = the two groups' 95% bootstrap intervals do not overlap (a conservative test); p-values are two-proportion z-tests between best and worst group, uncorrected. Age gaps range from 9.2 to 21.2 across models (p = 0.03 for ResNet-50, 0.09 for 224 px); we did not test whether the differences between models are real. ViT-S (untuned): age 14.6 (p = 0.007), gender 5.4 (p = 0.003), race 2.5 (p = 0.52). No race gap reaches p < 0.05, but african-american has n=234 so its intervals are wide. The 70+ group has only 89 images.", "Bias");
+    "Gaps are best group minus worst group in accuracy points; gender is female minus male. An asterisk = the two groups' 95% bootstrap intervals do not overlap (a conservative test); p-values are two-proportion z-tests between best and worst group, uncorrected. Age gaps range from 9.2 to 21.2 across models (p = 0.03 for ResNet-50, 0.09 for 224 px); we did not test whether the differences between models are real. ViT-B: age 12.7 (p = 0.02), gender 7.3 (p < 0.001), race 7.6 (p = 0.04). ViT-B's race gap (asian 68.3% vs african-american 60.7%) is the only race gap with p < 0.05 and its p-value is uncorrected for picking the best and worst of three groups and for the many comparisons; african-american has n=234, so we treat it as unclear. The 70+ group has only 89 images.", "Bias");
   const head = (t) => ({ text: t, options: { bold: true, color: HEX.lt1, fill: { color: HEX.dk1 }, align: "center", valign: "middle" } });
   const cell = (t, sig) => ({ text: t, options: { bold: !!sig, color: HEX.dk1, align: "center", valign: "middle" } });
   const name = (t) => ({ text: t, options: { color: HEX.dk1, align: "left", valign: "middle" } });
@@ -233,13 +233,13 @@ pres.addSection({ title: "Bias" });
     [name("ResNet-18"), cell("18.2 *", true), cell("9.0 *", true), cell("3.1")],
     [name("ResNet-18, 224 px"), cell("9.2"), cell("8.2 *", true), cell("7.1")],
     [name("ResNet-50"), cell("11.7"), cell("8.1 *", true), cell("4.7")],
-    [name("ViT-S (untuned)"), cell("14.6 *", true), cell("5.4 *", true), cell("2.5")],
+    [name("ViT-B"), cell("12.7"), cell("7.3 *", true), cell("7.6")],
   ];
   s.addTable(rows, { x: 0.5, y: 1.4, w: 6.0, colW: [2.1, 1.25, 1.4, 1.25], rowH: 0.5, fontSize: 14, fontFace: "Calibri", border: { type: "solid", pt: 0.75, color: "C9D4DC" }, fill: { color: HEX.lt1 }, objectName: "Gap table" });
-  s.addText("* intervals of best and worst group do not overlap (conservative). Unmarked is not zero: ResNet-50 age gap p = 0.03. Points.", { x: 0.5, y: 4.45, w: 6.0, h: 0.65, fontSize: 12, color: C.text2, margin: 0, valign: "top", isTextBox: true });
+  s.addText("* intervals of best and worst group do not overlap (conservative). Unmarked is not zero: ResNet-50 age gap p = 0.03; ViT-B race gap p = 0.04 (uncorrected). Points.", { x: 0.5, y: 4.45, w: 6.0, h: 0.65, fontSize: 12, color: C.text2, margin: 0, valign: "top", isTextBox: true });
   s.addText([
     { text: "Age gaps range from 9 to 21 points across models.", options: { bullet: true, breakLine: true } },
-    { text: "Race: no gap reaches p < 0.05, but groups are small.", options: { bullet: true, breakLine: true } },
+    { text: "Race: only ViT-B (7.6) reaches p < 0.05, uncorrected and with small groups, so it is unclear.", options: { bullet: true, breakLine: true } },
     { text: "70+ has only 89 images, so it is the least certain.", options: { bullet: true } },
   ], { x: 6.8, y: 1.5, w: 2.7, h: 3.3, fontSize: 14, color: C.text1, margin: 0, valign: "top", paraSpaceAfter: 10, isTextBox: true });
 }
@@ -262,24 +262,28 @@ pres.addSection({ title: "Bias" });
 // ---------- 11. Attention ----------
 pres.addSection({ title: "Wrap-up" });
 {
-  const s = content("Where does ResNet-50 look?",
-    "Grad-CAM grid for ResNet-50 on FER-2013 test images (results/resnet50/explain_fer2013/gradcam_grid.png): rows are true classes, titles read true -> predicted. In these 28 examples the heat sits mostly on the mouth and nose; the eyes are rarely highlighted even for fear and surprise, and wrong predictions look much like right ones. This is a small qualitative sample. From the CNN run (PR #22), Grad-CAM also focused on mouth and eyes, with several fear errors attending to hands or background. ViT attention maps and per-subgroup mean heatmaps are Pawan's (#11) and pending.", "Wrap-up");
+  const s = content("Where do ResNet-50 and ViT-B look?",
+    "Grad-CAM for the predicted class on FER-2013 test images; the same 28 images (4 per emotion) are in every model's grid, rows are true classes, titles read true -> predicted. Left ResNet-50 (results/resnet50/explain_fer2013/gradcam_grid.png), right ViT-B (results/vit/explain_fer2013/gradcam_grid.png). ResNet-50 gives one compact hotspot, mostly on the mouth and nose, and the eyes rarely light up, whether or not the prediction is right. ViT-B is much more diffuse, with strong heat on hair, jaw, neck, hands and image borders in several images, and some wrong predictions have most of their heat away from the face (for example a happy face called neutral with the heat along the bottom edge). Where a model looks does not track accuracy here: ResNet-50 has the most compact maps and ViT-B the most diffuse, yet their test accuracy is 70.1% and 70.7%. Caveats: this is qualitative and rests on 28 images; the ViT maps come from a 14x14 patch grid and a different layer type, so part of the difference may come from the method; Grad-CAM shows where the output is sensitive, not why the model decided. Mean maps per gender group were generated but not analysed, so we make no claim about whether the models look at different places for different groups (see report/attention_conclusion_limitations.md).", "Wrap-up");
   s.addText([
-    { text: "ResNet-50 on FER-2013 test images (28 examples shown).", options: { bullet: true, breakLine: true } },
-    { text: "Heat sits mostly on the mouth and nose. The eyes are rarely highlighted, even for fear and surprise.", options: { bullet: true, breakLine: true } },
-    { text: "Wrong predictions (for example fear → sad) look much like correct ones.", options: { bullet: true, breakLine: true } },
-    { text: "ViT attention and per-group heatmaps: pending.", options: { bullet: true } },
-  ], { x: 0.5, y: 1.45, w: 6.4, h: 3.5, fontSize: 16, color: C.text1, margin: 0, valign: "top", paraSpaceAfter: 12, isTextBox: true });
-  s.addImage({ path: REPO + "/results/resnet50/explain_fer2013/gradcam_grid.png", x: 7.3, y: 1.35, w: 2.14, h: 3.75, altText: "Grad-CAM heatmaps of ResNet-50 on FER-2013 test faces, one row per emotion", objectName: "Grad-CAM grid" });
+    { text: "Same 28 FER-2013 test images in both grids.", options: { bullet: true, breakLine: true } },
+    { text: "ResNet-50: one compact hotspot, mostly mouth and nose; the eyes rarely light up.", options: { bullet: true, breakLine: true } },
+    { text: "ViT-B: much more diffuse, with heat on hair, jaw, hands and image borders in several images.", options: { bullet: true, breakLine: true } },
+    { text: "Where a model looks does not track accuracy (70.1% vs 70.7%).", options: { bullet: true, breakLine: true } },
+    { text: "Qualitative, 28 images; ViT maps use a 14×14 patch grid, so part of the difference may be the method. No claim about subgroups.", options: { bullet: true } },
+  ], { x: 0.5, y: 1.45, w: 4.55, h: 3.55, fontSize: 13, color: C.text1, margin: 0, valign: "top", paraSpaceAfter: 8, isTextBox: true });
+  s.addText("ResNet-50", { x: 5.3, y: 1.3, w: 2.0, h: 0.3, fontSize: 12, bold: true, color: C.text2, margin: 0, align: "center", isTextBox: true });
+  s.addText("ViT-B", { x: 7.45, y: 1.3, w: 2.0, h: 0.3, fontSize: 12, bold: true, color: C.text2, margin: 0, align: "center", isTextBox: true });
+  s.addImage({ path: REPO + "/results/resnet50/explain_fer2013/gradcam_grid.png", x: 5.3, y: 1.62, w: 2.0, h: 3.5, altText: "Grad-CAM heatmaps of ResNet-50 on FER-2013 test faces, one row per emotion", objectName: "Grad-CAM grid ResNet-50" });
+  s.addImage({ path: REPO + "/results/vit/explain_fer2013/gradcam_grid.png", x: 7.45, y: 1.62, w: 2.0, h: 3.5, altText: "Grad-CAM heatmaps of ViT-B on the same FER-2013 test faces, one row per emotion", objectName: "Grad-CAM grid ViT-B" });
 }
 
 // ---------- 12. Conclusion ----------
 {
   const s = content("What we learned",
-    "Three messages. Transfer: of the two selected configurations ResNet-50 transfers better (64.2% vs 61.2% on RAF-DB), but the untuned CNN reached 65.1%, so the margin over a simple CNN is small, and pretraining alone (ResNet-18) did not improve transfer. The untuned ViT-S matched ResNet-50 on FER-2013 but scored lower on RAF-DB (62.8% / 0.475). Bias: women are recognised better than men in every model (8-10 points for CNN and ResNets, 5.4 for ViT-S), and age gaps vary between models (9 to 21 points). Mitigation: balanced sampling added about 0.5 points over simply training on target data, so we cannot claim it reduced bias. Limits: one seed per run, small subgroups, audit on RAF-DB only, and ViT is one untuned run.", "Wrap-up");
+    "Three messages. Transfer: the three selected models are tied in-domain (70.1-70.7%); on RAF-DB ResNet-50 and ViT-B transfer better than the tuned CNN (64.2% and 64.7% vs 61.2%) and are level with each other, but the untuned CNN reached 65.1%, so the margin over a simple CNN is small, and pretraining alone (ResNet-18) did not improve transfer. Bias: women are recognised better than men in every model (7 to 10 points for the three selected models, all p < 0.001), and age gaps vary between models (9 to 21 points); ViT-B's race gap of 7.6 points (p = 0.04, uncorrected) is borderline and we treat it as unclear. Mitigation: balanced sampling added about 0.5 points over simply training on target data, so we cannot claim it reduced bias. Limits: one seed per run, small subgroups, audit on RAF-DB only.", "Wrap-up");
   const items = [
-    ["Transfer", "ResNet-50 transfers better than the tuned CNN (64.2% vs 61.2% on RAF-DB); the untuned CNN reached 65.1%, the untuned ViT-S 62.8%."],
-    ["Bias persists", "Women beat men in every model (5–10 points); age gaps vary from 9 to 21 points."],
+    ["Transfer", "ResNet-50 and ViT-B transfer better than the tuned CNN (64.2% and 64.7% vs 61.2% on RAF-DB); the untuned CNN reached 65.1%."],
+    ["Bias persists", "Women beat men in every model (7–10 points for the selected models); age gaps vary from 9 to 21 points."],
     ["Mitigation", "Balanced sampling added about 0.5 points over training on target data."],
   ];
   items.forEach((it, i) => {
@@ -288,7 +292,7 @@ pres.addSection({ title: "Wrap-up" });
     s.addText(it[0], { x: x + 0.2, y: 1.6, w: 2.4, h: 0.4, fontSize: 18, bold: true, color: C.accent1, margin: 0, isTextBox: true, fontFace: "Cambria" });
     s.addText(it[1], { x: x + 0.2, y: 2.1, w: 2.4, h: 1.8, fontSize: 14, color: C.text1, margin: 0, valign: "top", isTextBox: true });
   });
-  s.addText("Limits: one seed per run, small subgroups (70+ has 89 images), audit on RAF-DB only, ViT is one untuned run.",
+  s.addText("Limits: one seed per run, small subgroups (70+ has 89 images), audit on RAF-DB only.",
     { x: 0.5, y: 4.25, w: 9, h: 0.7, fontSize: 14, color: C.text2, margin: 0, valign: "top", isTextBox: true });
 }
 

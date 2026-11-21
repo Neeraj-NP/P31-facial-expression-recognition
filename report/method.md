@@ -15,11 +15,12 @@ We compare three architectures of increasing size and pretraining, trained on th
   Inputs are resized to 112×112 (or 224×224, see tuning below); the greyscale image is
   replicated to 3 channels and ImageNet-normalised to match the input format the pretrained
   weights expect (the models never see colour; see the Data section).
-- **ViT (fine-tuning).** An ImageNet-pretrained ViT-Small with 16×16 patches (`timm`
-  `vit_small_patch16_224`, about 22M parameters) with a new 7-class head, fine-tuned
-  end-to-end at 224×224 (greyscale replicated to 3 channels, ImageNet normalisation). The reported run (`vit_small`)
-  uses learning rate 5e-5, weight decay 0.05 and batch size 64 for 15 epochs; it is the
-  untuned baseline configuration, since the ViT tuning experiments were not completed.
+- **ViT (fine-tuning).** An ImageNet-pretrained Vision Transformer with 16×16 patches (`timm`)
+  and a new 7-class head, fine-tuned end-to-end at 224×224 (greyscale replicated to 3 channels,
+  ImageNet normalisation). The selected model is ViT-B (`vit_base_patch16_224`, about 86M
+  parameters; learning rate 3e-5, weight decay 0.05, batch size 32, at most 15 epochs). The
+  ViT-S baseline (`vit_small_patch16_224`, about 22M parameters, learning rate 5e-5) is kept
+  as a comparison. See the ViT tuning experiments below.
 
 All three share one training script (`src/train.py`) and one evaluation script
 (`src/evaluate.py`), differing only through a YAML config, so results are directly
@@ -63,6 +64,23 @@ attached, so the optimiser only updates the head. The frozen backbone is also ke
 during training: otherwise PyTorch's `model.train()` puts its BatchNorm layers back in
 training mode and their running statistics drift away from the pretrained ones (our first frozen
 run suffered from exactly this and scored about 30% before the fix).
+
+### ViT tuning experiments
+
+The ViT sweep (`results/vit_tuning.md`) changes one factor at a time against the ViT-S baseline
+(`configs/vit_small.yaml`, learning rate 5e-5):
+
+| Experiment | Change vs. baseline |
+|---|---|
+| `vit_small_lr1e5`, `_lr3e5`, `_lr1e4` | Learning rate 1e-5, 3e-5 or 1e-4 |
+| `vit_small_lld` | Learning rate 1e-4 with layer-wise learning-rate decay 0.75 (earlier blocks get a smaller step) |
+| `vit` | ViT-B instead of ViT-S, learning rate 3e-5, batch size 32 |
+
+Every configuration is chosen on FER-2013 validation macro-F1, never on RAF-DB: ViT-B has the highest
+(0.679, against 0.669 for the best ViT-S run). Freezing the first blocks (`freeze_blocks`) is implemented
+but was not run. The layer-decay run builds its optimiser with timm's `create_optimizer_v2`, which also
+excludes biases, normalisation parameters, the position embedding and the class token from weight decay,
+so that run differs from the baseline in two ways, not one.
 
 ## Evaluation protocol
 

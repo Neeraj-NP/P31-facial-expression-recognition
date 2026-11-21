@@ -8,8 +8,8 @@ Reads each run's eval_fer2013/ and eval_rafdb/ (metrics.json, confusion.csv) and
   confusion_shift.csv       off-diagonal cells that grow the most from FER-2013 to RAF-DB
 
     python -m src.cross_dataset                      # default runs
-    python -m src.cross_dataset --runs results/cnn_best results/resnet50 results/vit_small \
-        --focus results/cnn_best results/resnet50 results/vit_small
+    python -m src.cross_dataset --runs results/cnn_best results/resnet50 results/vit \
+        --focus results/cnn_best results/resnet50 results/vit
 
 confusion.csv is written by src.evaluate. For older runs, --from-predictions builds it from a local
 predictions.csv first (the per-image file is never committed, only the aggregate counts).
@@ -28,12 +28,12 @@ from sklearn.metrics import confusion_matrix
 from .datasets import CLASSES
 
 DATASETS = ("fer2013", "rafdb")
-DEFAULT_RUNS = ["cnn", "cnn_best", "resnet", "resnet_224", "resnet_frozen", "resnet50", "vit_small"]
-DEFAULT_FOCUS = ["cnn_best", "resnet50", "vit_small"]
+DEFAULT_RUNS = ["cnn", "cnn_best", "resnet", "resnet_224", "resnet_frozen", "resnet50", "vit_small", "vit_small_lr1e4", "vit"]
+DEFAULT_FOCUS = ["cnn_best", "resnet50", "vit"]  # the three selected models
 LABELS = {
     "cnn": "CNN baseline", "cnn_best": "CNN (tuned)", "resnet": "ResNet-18",
     "resnet_224": "ResNet-18 224px", "resnet_frozen": "ResNet-18 frozen", "resnet50": "ResNet-50",
-    "vit_small": "ViT-S",
+    "vit_small": "ViT-S baseline", "vit_small_lr1e4": "ViT-S lr 1e-4", "vit": "ViT-B",
 }
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#6250d6"]  # fixed order: one colour per focus model
 INK, MUTED = "#0b0b0b", "#52514e"

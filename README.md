@@ -22,7 +22,7 @@ Put the datasets in `data/` as described in [data/README.md](data/README.md).
 # 1. train: results/<run-name>/ gets config.yaml, history.csv, best.pt
 python -m src.train --config configs/cnn_best.yaml --run-name cnn_best
 python -m src.train --config configs/resnet50.yaml --run-name resnet50
-python -m src.train --config configs/vit_small.yaml --run-name vit_small
+python -m src.train --config configs/vit.yaml --run-name vit
 
 # 2. evaluate: in-domain, then cross-dataset + subgroup audit
 python -m src.evaluate --run results/cnn_best --dataset fer2013
@@ -30,7 +30,7 @@ python -m src.evaluate --run results/cnn_best --dataset rafdb
 
 # 3. compare models: cross-dataset table, per-emotion drop, confusion shift; bias gap table
 python -m src.cross_dataset
-python -m src.bias_report --runs results/cnn_best results/resnet50 results/vit_small
+python -m src.bias_report --runs results/cnn_best results/resnet50 results/vit
 
 # 4. saliency maps
 python -m src.explain --run results/cnn_best --dataset fer2013
@@ -55,18 +55,21 @@ Optional keys (defaults reproduce the baselines):
 | `model.dropout` | `0.4` | CNN classifier dropout |
 | `model.block_dropout` | `0.25` | CNN dropout after each conv block |
 | `train.class_weights` | `true` | inverse-frequency class weights in the loss |
+| `model.freeze_backbone` | `false` | ResNet: train only the new classifier head |
+| `model.freeze_blocks` | `0` | ViT: freeze the patch embedding and the first n transformer blocks |
+| `train.layer_decay` | off | ViT: layer-wise LR decay (earlier blocks get a smaller LR) |
 
 ## Results
 
 Trained on FER-2013, tested on the FER-2013 test set (in-domain) and the RAF-DB test set (cross-dataset,
-never used for training or model selection). The CNN and ResNet rows are the configurations selected on
-FER-2013 validation macro-F1; ViT-S is a single untuned baseline run, so its row is indicative.
+never used for training or model selection). Each row is the configuration selected on FER-2013
+validation macro-F1 from that family's tuning runs.
 
 | Model | FER-2013 acc / macro-F1 | RAF-DB acc / macro-F1 | Balanced-acc drop | Gender gap (F-M) | Age gap |
 |---|---|---|---|---|---|
 | CNN from scratch (`cnn_best`) | 70.2% / 0.684 | 61.2% / 0.443 | 21.7 pts | 10.4 pts | 15.2 pts |
 | ResNet-50, ImageNet-pretrained (`resnet50`) | 70.1% / 0.687 | 64.2% / 0.493 | 15.2 pts | 8.1 pts | 11.7 pts |
-| ViT-S, ImageNet-pretrained, untuned (`vit_small`) | 70.1% / 0.661 | 62.8% / 0.475 | 18.4 pts | 5.4 pts | 14.6 pts |
+| ViT-B, ImageNet-pretrained (`vit`) | 70.7% / 0.679 | 64.7% / 0.490 | 17.4 pts | 7.3 pts | 12.7 pts |
 
 - **Cross-dataset transfer is the main weakness.** Balanced accuracy (mean per-class recall) falls by
   15-22 points on RAF-DB; plain accuracy hides much of this because RAF-DB is 39% happy, the class that
@@ -74,13 +77,19 @@ FER-2013 validation macro-F1; ViT-S is a single untuned baseline run, so its row
   fear and anger also drop sharply. Details: [results/cross_dataset_analysis.md](results/cross_dataset_analysis.md).
 - **In-domain gains did not transfer.** Tuning the CNN raised FER-2013 accuracy from 67.6% to 70.2% but
   lowered RAF-DB accuracy from 65.1% to 61.2% ([results/cnn_tuning.md](results/cnn_tuning.md)).
-- **Every model is less accurate on men than on women** (8-10 points for the CNN and ResNets, 5.4 for
-  ViT-S; all p < 0.01). Fine-tuning on RAF-DB
+- **In-domain the three models are tied** (70.1-70.7% accuracy, macro-F1 0.679-0.687, one seed each).
+  The two pretrained models transfer better than the tuned CNN, but the untuned CNN baseline transfers
+  about as well as either.
+- **Every model is less accurate on men than on women** (7-10 points for the three selected models,
+  p < 0.001). Fine-tuning on RAF-DB
   halves the gap; subgroup-balanced sampling adds little on top
   ([results/resnet_mitigation.md](results/resnet_mitigation.md)).
 
 Gaps are best-minus-worst group accuracy on RAF-DB; see [results/bias_report/](results/bias_report/) for
-intervals and p-values, and [results/resnet_tuning.md](results/resnet_tuning.md) for the ResNet runs.
+intervals and p-values. All runs side by side: [results/final_comparison.csv](results/final_comparison.csv)
+([notebooks/02_results.ipynb](notebooks/02_results.ipynb)); tuning: [CNN](results/cnn_tuning.md),
+[ResNet](results/resnet_tuning.md), [ViT](results/vit_tuning.md). To try a model on your own face photo, see
+[notebooks/03_demo.ipynb](notebooks/03_demo.ipynb).
 FER-2013 test numbers are slightly optimistic because about 7% of its test images also appear in training.
 
 ## Labels

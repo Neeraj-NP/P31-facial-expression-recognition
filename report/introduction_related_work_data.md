@@ -24,19 +24,20 @@ scratch and two ImageNet-pretrained architectures. We study them along three axe
 3. **Bias.** Using RAF-DB's gender, race and age annotations, do accuracy gaps between demographic
    groups exist, are they statistically supported, and does subgroup-balanced fine-tuning reduce them?
 
-We also use Grad-CAM [12] to inspect which facial regions each model relies on. The CNN and ResNet
-configurations were tuned on FER-2013 validation data; the ViT is a single untuned baseline run, so
-comparisons involving it are indicative rather than like-for-like.
+We also use Grad-CAM [12] to inspect which facial regions each model relies on. For each family we run a
+small set of tuning experiments and select one configuration by FER-2013 validation macro-F1, so the three
+final models (a tuned CNN, ResNet-50 and ViT-B) are compared on the same footing.
 
 **Contributions.**
 - One configuration-driven pipeline (`src/train.py`, `src/evaluate.py`) in which the three model
   families differ only in their YAML config, so the comparisons are not artefacts of different code.
 - A cross-dataset evaluation showing that plain accuracy hides most of the transfer loss. Balanced
   accuracy falls by 15-22 points on RAF-DB, against 2.5-9 points for plain accuracy, and the loss is
-  concentrated in disgust, surprise, fear and anger. We also find that tuning for in-domain accuracy
+  concentrated in disgust, surprise and fear. We also find that tuning for in-domain accuracy
   can make transfer worse.
 - A subgroup audit with bootstrap confidence intervals and significance tests. It finds an accuracy
-  gap between women and men in every model (8-10 points for the CNN and ResNets, 5.4 for ViT-S). A controlled mitigation
+  gap between women and men in every model we trained (7-10 points for the three selected models,
+  p < 0.001). A controlled mitigation
   experiment shows that fine-tuning on target-domain data, not balanced sampling, is what narrows it.
 
 ## 2. Related work

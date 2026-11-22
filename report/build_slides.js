@@ -1,5 +1,10 @@
 // Builds report/slides.pptx. Needs pptxgenjs (npm install pptxgenjs, anywhere on NODE_PATH):
 //   node report/build_slides.js [out.pptx]
+// FILE ROLE: generates the presentation report/slides.pptx from code, so the deck is reproducible and can be reviewed in git.
+// Run it with:  node report/build_slides.js   (needs the pptxgenjs package; it is not part of the Python project).
+// IMPORTANT: the chart and table numbers below are typed in by hand from the result files (results/*/eval_*/metrics.json,
+// results/bias_report/gap_table.csv). If a result changes, edit the numbers here and run the script again.
+// Each '// ---------- N. ----------' block below is one slide; the text passed to content() is the speaker notes.
 const fs = require("fs");
 const path = require("path");
 const pptxgen = require("pptxgenjs");
@@ -8,6 +13,8 @@ const REPO = path.resolve(__dirname, "..");
 const OUT = process.argv[2] || path.join(__dirname, "slides.pptx");
 
 // pptxgenjs writes Office's default palette; put the deck's own colors into the theme part.
+// Post-processes the saved .pptx (a zip of XML files): writes our colours into the theme and fixes a chart-axis setting
+// so PowerPoint and other viewers draw the charts the same way. Called once at the very end.
 async function applyTheme(file, theme) {
   const JSZip = require(require.resolve("jszip", { paths: [require.resolve("pptxgenjs")] }));
   const zip = await JSZip.loadAsync(fs.readFileSync(file));
@@ -26,6 +33,7 @@ async function applyTheme(file, theme) {
   for (const name of Object.keys(zip.files)) if (zip.files[name].dir) delete zip.files[name];
   fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
 }
+// The deck's colour palette and fonts, in one place.
 const THEME = {
   name: "P31 Emotion",
   headFontFace: "Cambria",
@@ -64,6 +72,7 @@ pres.defineSlideMaster({
   slideNumber: { x: 9.0, y: 5.2, w: 0.5, h: 0.3, fontSize: 10, color: C.text2, align: "right" },
 });
 
+// Helper: adds one normal slide with a title and speaker notes and returns it so the caller can add charts and text.
 function content(title, notes, section) {
   const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: section });
   s.addText(title, { placeholder: "title" });
@@ -71,14 +80,17 @@ function content(title, notes, section) {
   return s;
 }
 
+// Helper: draws a light rounded rectangle used as a card background.
 function card(s, x, y, w, h, name) {
   s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: C.background2 }, line: { color: C.background2, width: 0 }, rectRadius: 0.08, objectName: name });
 }
 
+// Helper: draws a numbered circle for the numbered list on the training-setup slide.
 function dot(s, x, y, n, name) {
   s.addText(String(n), { x, y, w: 0.45, h: 0.45, shape: pres.shapes.OVAL, fill: { color: C.accent1 }, color: C.background1, bold: true, fontSize: 16, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: name });
 }
 
+// Shared chart styling (position, fonts, grid, data labels) so every chart looks the same.
 const chartBase = {
   x: 0.5, y: 1.35, w: 5.6, h: 3.75,
   catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt", dataLabelFontFace: "+mn-lt",

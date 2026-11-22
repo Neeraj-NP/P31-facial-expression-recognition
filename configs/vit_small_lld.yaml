@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/vit.yaml for what differs for this model family).
 # ViT tuning (#8): layer-wise LR decay 0.75, base lr 1e-4 (the head gets 1e-4, earlier blocks less)
 seed: 42
 data:

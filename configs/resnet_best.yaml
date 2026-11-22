@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/resnet.yaml for what differs for this model family).
 # Best ResNet config from the tuning runs (issue #7): ResNet-50, highest validation macro-F1
 # (0.681). See results/resnet_tuning.md.
 seed: 42

@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/cnn.yaml for what differs for this model family).
 # CNN tuning (#6): no augmentation at all - how much does augmentation help?
 seed: 42
 data:

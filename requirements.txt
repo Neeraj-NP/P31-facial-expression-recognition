@@ -1,14 +1,27 @@
 # Install PyTorch with CUDA first (see README), then: pip install -r requirements.txt
+# Deep-learning framework: builds and trains the models (tensors, autograd, GPU).
 torch>=2.4
+# Image transforms (resize, augment, normalise) and the pretrained ResNet models.
 torchvision>=0.19
+# Provides the pretrained Vision Transformer (ViT) models.
 timm>=1.0
+# Grad-CAM heat maps (src/explain.py and the demo notebook).
 grad-cam>=1.5
+# Metrics (accuracy, macro-F1, confusion matrix) and the stratified train/validation split.
 scikit-learn>=1.5
+# Tables (DataFrames) for image lists, predictions and result files.
 pandas>=2.2
+# Numerical arrays; used by almost every file.
 numpy>=1.26
+# Draws the charts and Grad-CAM figures.
 matplotlib>=3.9
+# Confusion-matrix heat maps and EDA plots.
 seaborn>=0.13
+# Reads the configs/*.yaml experiment files.
 pyyaml>=6.0
+# Progress bars during training and evaluation.
 tqdm>=4.66
+# Opens the image files.
 pillow>=10.0
+# Runs the notebooks (EDA, results, demo, Kaggle training).
 jupyter

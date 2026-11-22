@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/resnet.yaml for what differs for this model family).
 # Tuning experiment: frozen backbone (linear probe) vs resnet.yaml's full fine-tuning.
 # Only change vs resnet.yaml: model.freeze_backbone.
 seed: 42

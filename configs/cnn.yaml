@@ -1,23 +1,51 @@
 # Baseline: CNN from scratch on 48x48 grayscale (owner: Neeraj)
+# seed: fixes the random numbers (weight start values, shuffling, the train/val split) so a run can be repeated.
 seed: 42
+# data: where the images are and how they are fed to the model. Read by common.get_frames and common.make_loader.
+# Paths are relative to the repo root; the Kaggle notebook replaces them with Kaggle's folders.
 data:
+  # fer2013_root / rafdb_root: folders of the two datasets (datasets are not in git, see data/README.md).
   fer2013_root: data/fer2013
   rafdb_root: data/rafdb
+  # val_frac: share of FER-2013's training images held out as the validation set (used to pick the best epoch).
   val_frac: 0.1
+  # img_size: images are resized to this many pixels per side (the CNN was designed for 48x48).
   img_size: 48
+  # channels: 1 = greyscale input. ResNet/ViT configs use 3 (the grey image copied three times).
   channels: 1
+  # num_workers: how many background processes load images in parallel (speed only, no effect on results).
   num_workers: 4
+# model: which network to build. Read by models.build_model through common.model_kwargs.
 model:
+  # name: model type: cnn, resnet18, resnet50 or a timm ViT name.
   name: cnn
+  # num_classes: 7 emotions, so the last layer has 7 outputs.
   num_classes: 7
+  # pretrained: false = start from random weights (the from-scratch baseline); true = start from ImageNet weights.
   pretrained: false
+# train: training settings. Read by train.py.
 train:
+  # epochs: maximum number of passes over the training set (early stopping may end training sooner).
   epochs: 60
+  # batch_size: images per update step. Bigger models/images need a smaller batch to fit in GPU memory.
   batch_size: 128
+  # lr: learning rate, the size of each weight update (the peak value; warmup and cosine decay change it during training).
   lr: 0.001
+  # weight_decay: small penalty on large weights (AdamW) that reduces overfitting.
   weight_decay: 0.0001
+  # warmup_epochs: epochs spent raising the learning rate from ~0 to lr at the start.
   warmup_epochs: 2
+  # label_smoothing: softens the 0/1 targets a little, so the model is less over-confident on noisy labels.
   label_smoothing: 0.1
+  # class_weights: true = rare emotions (disgust) count more in the loss, to counter class imbalance.
   class_weights: true
+  # amp: mixed precision (float16) on GPU for speed. Ignored on CPU.
   amp: true
+  # early_stop_patience: stop if validation macro-F1 has not improved for this many epochs.
   early_stop_patience: 12
+
+# OPTIONAL KEYS (not set in this file; other configs use them, and the defaults reproduce this baseline):
+#   data.augment (true/false), data.random_erasing (0 to 1)   -> common.make_loader -> datasets.build_transforms
+#   model.dropout, model.block_dropout (CNN only)              -> models.build_model
+#   model.freeze_backbone (ResNet), model.freeze_blocks (ViT)  -> models.build_model
+#   train.layer_decay (ViT)                                    -> train.build_optimizer

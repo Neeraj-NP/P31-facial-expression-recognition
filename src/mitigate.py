@@ -11,6 +11,13 @@ needed to tell the effect of balancing apart from the effect of the extra traini
     python -m src.evaluate --run results/resnet50_mit_gender --dataset rafdb
     python -m src.bias_report --runs results/resnet50 results/resnet50_mit_none results/resnet50_mit_gender --dataset rafdb
 """
+# =====================================================================
+# FILE ROLE: the bias-mitigation experiment. It takes an already-trained model and keeps training it on RAF-DB's training
+# split, either with subgroup-balanced sampling or (as a control) with ordinary shuffling.
+# HOW IT IS RUN: python -m src.mitigate --run results/resnet50 --balance-by gender --epochs 10
+# INPUT: results/<run>/best.pt.  OUTPUT: a NEW run folder results/<run>_mit_<attribute>/ with the same layout as a normal run.
+# GOES TO: evaluate.py and bias_report.py can then be run on that folder unchanged, to compare gaps before and after.
+# =====================================================================
 import argparse
 import math
 from pathlib import Path
@@ -27,17 +34,23 @@ from .datasets import rafdb_frame
 from .train import run_epoch
 
 
+# INPUT: the training DataFrame and the attribute to balance (gender, race or age).
+# RETURNS: a WeightedRandomSampler.  GOES TO: make_loader(sampler=...), which uses it instead of normal shuffling.
 def subgroup_sampler(df, attribute):
     """Inverse-frequency sampling weights so every group of `attribute` is drawn equally often.
 
     Every value counts as a group, including gender "unsure" (about 6% of images), so with
     gender each of the three groups gets a third of the draws and "unsure" images are sampled
     roughly 5x more often than their share of the data."""
+    # Each image gets weight 1 / (size of its group), so a small group's images are drawn more often and the
+    # groups end up equally represented in every epoch. replacement=True lets rare images be seen several times.
     counts = df[attribute].value_counts()
     weights = df[attribute].map(lambda g: 1.0 / counts[g]).to_numpy()
     return WeightedRandomSampler(weights, num_samples=len(df), replacement=True)
 
 
+# FLOW: load trained model -> build RAF-DB train/val tables -> (optional) balanced sampler -> fine-tune with a very low learning
+#  rate using train.run_epoch -> keep the epoch with the best validation macro-F1 -> save the new run folder.
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True, help="results/<run> of the already-trained model")
@@ -49,6 +62,7 @@ def main():
     args = ap.parse_args()
 
     device = get_device()
+    # Start from an ALREADY TRAINED model (trained on FER-2013) and keep training it on RAF-DB's training split.
     model, cfg = load_run(args.run, device)
     seed_everything(cfg["seed"])
 
@@ -57,6 +71,8 @@ def main():
     df = rafdb_frame(root, "train")
     # same rows for every condition, so the control and the balanced runs train and validate on identical data
     df = df.dropna(subset=[c for c in ("gender", "race", "age") if c in df]).reset_index(drop=True)
+    # A validation slice (15%) of RAF-DB TRAIN is used to pick the best epoch; RAF-DB TEST stays untouched
+    # for the final audit. stratify keeps the class mix equal in both parts.
     train_df, val_df = train_test_split(
         df, test_size=args.val_frac, stratify=df["label"], random_state=cfg["seed"]
     )
@@ -64,18 +80,23 @@ def main():
     if balance:
         print(train_df[args.balance_by].value_counts().to_string())
 
+    # The balanced sampler is the ONLY difference between a mitigation run and its control.
     sampler = subgroup_sampler(train_df, args.balance_by) if balance else None
     train_loader = make_loader(cfg, train_df, train=True, sampler=sampler)
     val_loader = make_loader(cfg, val_df, train=False)
 
     criterion = nn.CrossEntropyLoss(label_smoothing=cfg["train"].get("label_smoothing", 0.0))
+    # Very low learning rate (1e-5): gently ADAPT the existing model to RAF-DB instead of retraining it.
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=cfg["train"]["weight_decay"])
     total_steps = args.epochs * len(train_loader)
+    # Cosine decay to ~0 over the run (no warmup needed: the model is already trained).
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer, lambda s: 0.5 * (1 + math.cos(math.pi * s / max(1, total_steps)))
     )
     scaler = torch.amp.GradScaler() if cfg["train"].get("amp", True) and device.type == "cuda" else None
 
+    # Results go to results/<source run>_mit_<balance-by>/ in the same layout as a normal run, so evaluate /
+    # explain / bias_report work on it without any changes.
     out = ROOT / "results" / f"{Path(args.run).name}_mit_{args.balance_by}"
     out.mkdir(parents=True, exist_ok=True)
     mcfg = {**cfg, "mitigation": {

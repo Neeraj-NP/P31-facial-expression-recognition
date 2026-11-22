@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/vit.yaml for what differs for this model family).
 # ViT tuning (#8): LR sweep, lr 3e-5 (only change vs vit_small.yaml)
 seed: 42
 data:

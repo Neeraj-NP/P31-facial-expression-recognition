@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/cnn.yaml for what differs for this model family).
 # CNN final config (#6): cnn_long + cnn_lightreg (the two best on FER-2013 val macro-F1).
 # Class weights and augmentation are kept: removing them hurt (disgust F1 on RAF-DB -> 0 / heavy overfitting).
 seed: 42

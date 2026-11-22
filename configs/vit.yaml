@@ -1,24 +1,32 @@
 # ViT fine-tuning (owner: Pawan). Run on Kaggle/Colab GPU; 4 GB local GPU is too small for ViT-B.
 # For a local try, use vit_small_patch16_224 with batch_size 16.
+# Every other setting is explained key by key in configs/cnn.yaml; only the differences are explained here.
 seed: 42
 data:
   fer2013_root: data/fer2013
   rafdb_root: data/rafdb
   val_frac: 0.1
+  # img_size: 224 pixels, the size the pretrained ViT was trained on (it cuts this into 16x16 patches = a 14x14 grid).
   img_size: 224
+  # channels: 3 = the greyscale image is copied into 3 channels, which is what the pretrained ViT expects.
   channels: 3
   num_workers: 4
 model:
+  # name: vit_base_patch16_224 = ViT-Base, about 86M parameters, loaded through the timm library.
   name: vit_base_patch16_224
   num_classes: 7
+  # pretrained: true = start from ImageNet weights (transfer learning).
   pretrained: true
 train:
   epochs: 15
   batch_size: 32
+  # lr: very small (3e-5), because transformers are easily damaged by large updates when fine-tuning.
   lr: 0.00003
+  # weight_decay: 0.05 is the usual (larger) value for transformers.
   weight_decay: 0.05
   warmup_epochs: 1
   label_smoothing: 0.1
   class_weights: true
   amp: true
+  # early_stop_patience: short, because ViTs overfit this small dataset after only a few epochs.
   early_stop_patience: 5

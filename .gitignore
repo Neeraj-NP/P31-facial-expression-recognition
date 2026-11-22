@@ -1,12 +1,16 @@
+# Local Python environment and cache files: never committed.
 .venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+# Node packages used only to rebuild the slides (report/build_slides.js).
 node_modules/
 
 # datasets and large outputs stay local
+# The datasets stay local (large, and RAF-DB's licence does not allow redistribution); only data/README.md is tracked.
 data/*
 !data/README.md
+# Model checkpoints are large; they are shared through the team Drive, not git.
 results/**/*.pt
 results/**/*.pth
 # RAF-DB licence: no redistribution of images or per-image labels (Grad-CAMs show faces, predictions hold labels)
@@ -14,6 +18,7 @@ results/**/explain_rafdb/
 results/**/eval_rafdb/predictions.csv
 # per-image predictions are large and regenerable; only aggregate metrics are committed
 results/**/predictions.csv
+# Experiment-tracking folder (not used in this project).
 wandb/
 
 # Kaggle output downloads

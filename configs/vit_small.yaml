@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/vit.yaml for what differs for this model family).
 # ViT-Small baseline (#5, owner: Pawan). Start here; vit.yaml (ViT-Base) is for the tuning comparison.
 seed: 42
 data:

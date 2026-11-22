@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/resnet.yaml for what differs for this model family).
 # Tuning experiment: ResNet-50 vs resnet.yaml's ResNet-18.
 # Only change vs resnet.yaml: model.name (batch_size halved, ResNet-50 is ~2.5x the params).
 seed: 42

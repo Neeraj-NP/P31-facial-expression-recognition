@@ -7,6 +7,13 @@ emotion mix: the part of the gap that remains is a within-emotion difference.
 
     python -m src.class_mix_check --run results/resnet50 --attribute gender --a female --b male
 """
+# =====================================================================
+# FILE ROLE: a small diagnostic for the gender gap. It asks whether the gap comes from the two groups having different emotion
+# mixes, or from the model being worse for one group even within the same emotion.
+# HOW IT IS RUN: python -m src.class_mix_check --run results/resnet50 --attribute gender --a female --b male
+# INPUT: results/<run>/eval_rafdb/predictions.csv (local only, never committed).  OUTPUT: printed tables, no files written.
+# GOES TO: the "Why is accuracy lower for men?" section of the report quotes this result.
+# =====================================================================
 import argparse
 from pathlib import Path
 
@@ -15,6 +22,8 @@ import pandas as pd
 from .datasets import CLASSES
 
 
+# FLOW: load predictions -> keep the two groups -> compute each group's emotion mix and per-emotion accuracy -> re-weight group b
+#  to group a's mix and print how much of the gap that explains.
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
@@ -25,9 +34,12 @@ def main():
 
     d = pd.read_csv(Path(args.run) / "eval_rafdb" / "predictions.csv")
     d = d[d[args.attribute].isin([args.a, args.b])].copy()
-    d["ok"] = d["label"] == d["pred"]
+    d["ok"] = d["label"] == d["pred"]  # True when the prediction was correct
     d["emotion"] = d["label"].map(dict(enumerate(CLASSES)))
 
+    # IDEA: groups can differ in accuracy simply because they show different emotions (e.g. more "happy" faces,
+    # which are easy). This script separates that "emotion mix" effect from a real difference in model quality.
+    # mix = share of each emotion within each group; acc = accuracy per emotion within each group.
     mix = pd.crosstab(d[args.attribute], d["emotion"], normalize="index").mul(100).round(1)[CLASSES]
     acc = d.pivot_table(index=args.attribute, columns="emotion", values="ok").mul(100).round(1)[CLASSES]
     print("emotion mix (% of each group's images)")
@@ -35,6 +47,9 @@ def main():
     print("\naccuracy per emotion (%)")
     print(acc.to_string())
 
+    # Re-weighting: take group B's accuracy for each emotion, but weight the emotions by group A's mix.
+    # That is the accuracy B WOULD have if it had A's emotion mix. Whatever gap remains afterwards is NOT explained
+    # by the emotion mix, so it is a within-emotion difference.
     mix_a = d[d[args.attribute] == args.a]["emotion"].value_counts(normalize=True)
     b_acc = d[d[args.attribute] == args.b].groupby("emotion")["ok"].mean()
     a_overall = d[d[args.attribute] == args.a]["ok"].mean() * 100

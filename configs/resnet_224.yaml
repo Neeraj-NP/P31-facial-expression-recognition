@@ -1,3 +1,4 @@
+# What each setting means: see configs/cnn.yaml (and configs/resnet.yaml for what differs for this model family).
 # Tuning experiment: 224px input vs resnet.yaml's 112px.
 # Only change vs resnet.yaml: data.img_size.
 seed: 42

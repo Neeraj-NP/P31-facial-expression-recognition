@@ -5,6 +5,8 @@ Team 31: Neeraj Parmar, Rakshita K Biradar, Pawan Kushwah
 Classify 7 facial emotions (FER-2013) and audit performance across demographic subgroups (RAF-DB).
 Approach: CNN from scratch → pretrained ResNet → ViT fine-tuning; cross-dataset test; saliency maps.
 
+**Report:** [report/report.md](report/report.md) · **Slides:** [report/slides.pptx](report/slides.pptx)
+
 ## Setup (Windows)
 
 ```powershell
@@ -73,8 +75,8 @@ validation macro-F1 from that family's tuning runs.
 
 - **Cross-dataset transfer is the main weakness.** Balanced accuracy (mean per-class recall) falls by
   15-22 points on RAF-DB; plain accuracy hides much of this because RAF-DB is 39% happy, the class that
-  transfers best. Disgust collapses (F1 0.66 -> 0.13 for the CNN; it is read as anger), and surprise,
-  fear and anger also drop sharply. Details: [results/cross_dataset_analysis.md](results/cross_dataset_analysis.md).
+  transfers best. Disgust collapses (F1 0.66 -> 0.13 for the CNN; it is read as anger), and surprise
+  and fear also drop sharply. Details: [results/cross_dataset_analysis.md](results/cross_dataset_analysis.md).
 - **In-domain gains did not transfer.** Tuning the CNN raised FER-2013 accuracy from 67.6% to 70.2% but
   lowered RAF-DB accuracy from 65.1% to 61.2% ([results/cnn_tuning.md](results/cnn_tuning.md)).
 - **In-domain the three models are tied** (70.1-70.7% accuracy, macro-F1 0.679-0.687, one seed each).

@@ -15,3 +15,11 @@ resnet50,ResNet-50,surprise,sad,0.012,0.109,0.097
 resnet50,ResNet-50,surprise,fear,0.090,0.176,0.086
 resnet50,ResNet-50,neutral,sad,0.123,0.207,0.084
 resnet50,ResNet-50,fear,happy,0.018,0.095,0.077
+vit,ViT-B,disgust,sad,0.063,0.356,0.293
+vit,ViT-B,surprise,neutral,0.024,0.204,0.180
+vit,ViT-B,neutral,sad,0.119,0.296,0.176
+vit,ViT-B,disgust,angry,0.117,0.275,0.158
+vit,ViT-B,fear,happy,0.017,0.162,0.146
+vit,ViT-B,disgust,fear,0.018,0.144,0.126
+vit,ViT-B,surprise,fear,0.099,0.216,0.117
+vit,ViT-B,surprise,sad,0.011,0.100,0.089

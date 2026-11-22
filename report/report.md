@@ -341,30 +341,29 @@ Per-class F1, FER-2013 -> RAF-DB (change in brackets):
 The confusion matrices (rows normalised; right column is RAF-DB minus FER-2013) show how the errors change. The
 largest increases:
 
-| True -> predicted | CNN, tuned (FER -> RAF) | ResNet-50 (FER -> RAF) |
-|---|---|---|
-| disgust -> angry | 0.18 -> 0.53 | 0.21 -> 0.38 |
-| disgust -> sad | 0.05 -> 0.17 | 0.05 -> 0.25 |
-| surprise -> neutral | 0.02 -> 0.26 | 0.02 -> 0.19 |
-| fear -> happy | 0.01 -> 0.31 | 0.02 -> 0.10 |
-| surprise -> angry | 0.03 -> 0.16 | 0.03 -> 0.08 |
+| True -> predicted | CNN, tuned (FER -> RAF) | ResNet-50 (FER -> RAF) | ViT-B (FER -> RAF) |
+|---|---|---|---|
+| disgust -> angry | 0.18 -> 0.53 | 0.21 -> 0.38 | 0.12 -> 0.28 |
+| disgust -> sad | 0.05 -> 0.17 | 0.05 -> 0.25 | 0.06 -> 0.36 |
+| surprise -> neutral | 0.02 -> 0.26 | 0.02 -> 0.19 | 0.02 -> 0.20 |
+| fear -> happy | 0.01 -> 0.31 | 0.02 -> 0.10 | 0.02 -> 0.16 |
+| surprise -> angry | 0.03 -> 0.16 | 0.03 -> 0.08 | 0.02 -> 0.07 |
 
-1. **Disgust is read as anger (and sadness).** The disgust -> angry confusion already exists in-domain (about
-   0.2) and grows on RAF-DB. FER-2013 has only 392 disgust training images in our split (1.5%), so the models'
-   notion of disgust is narrow.
+1. **Disgust is read as anger (and sadness).** The disgust -> angry confusion already exists in-domain
+   (0.12-0.21) and grows on RAF-DB; for ViT-B the larger jump is disgust -> sad (0.06 -> 0.36). FER-2013 has
+   only 392 disgust training images in our split (1.5%), so the models' notion of disgust is narrow.
 2. **Surprise is under-predicted, not mislabelled at random.** Surprise recall falls to 0.29 (CNN), 0.38
    (ResNet-50) and 0.33 (ViT-B) while precision stays high (0.91, 0.83 and 0.94): when the models say "surprise"
    they are usually right, but most surprised faces are called neutral, angry or fear.
 3. **The tuned CNN over-predicts anger.** It labels 484 RAF-DB test images angry against 162 true angry faces
    (precision 0.24). The untuned baseline predicts angry 381 times, so tuning made this worse.
-4. **Fear -> happy is a CNN problem.** 31% of RAF-DB fear faces are called happy by the CNN, against 10% for
-   ResNet-50. Fear has only 74 RAF-DB test images, so these rates are noisy.
+4. **Fear -> happy is mostly a CNN problem.** 31% of RAF-DB fear faces are called happy by the CNN, against
+   16% for ViT-B and 10% for ResNet-50. Fear has only 74 RAF-DB test images, so these rates are noisy.
 
 Plausible reasons for these classes, not tested here: RAF-DB images are aligned, higher-resolution in-the-wild
 photos while FER-2013 is 48x48 and noisier; the two datasets were labelled by different annotators with
 different conventions [14]; and the minority emotions have the fewest FER-2013 training examples. Full tables:
-`results/cross_dataset_analysis.md`. (ViT-B's confusion counts are not yet committed, so it is missing from the
-confusion comparison.)
+`results/cross_dataset_analysis.md`.
 
 ### 5.3 Subgroup bias audit
 

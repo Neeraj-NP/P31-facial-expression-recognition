@@ -300,12 +300,12 @@ Bold rows are the three selected configurations. \*The frozen model is weak on b
 - **In-domain the three selected models are tied** (70.1-70.7% accuracy, macro-F1 0.679-0.687, one seed each),
   so we do not rank them.
 - **Accuracy understates the transfer loss.** RAF-DB is 39% happy, and happy transfers almost perfectly
-  (Section 5.2). Balanced accuracy drops 15-22 points for every trained model, against 2.5-9 for plain accuracy.
+  (Section 5.2). Balanced accuracy drops 15-22 points for every fully trained model, against 2.5-9 for plain accuracy.
   Even the CNN baseline, whose accuracy drops only 2.5 points, loses 16.5 points of balanced accuracy.
 - **ResNet-50 and ViT-B transfer better than the tuned CNN**: RAF-DB macro-F1 0.493 and 0.490 against 0.443,
   and accuracy drops of 5.9 and 6.0 points against 9.0. ResNet-50 and ViT-B are within noise of each other.
 - **This is not a clean "pretraining transfers better" result.** The untuned CNN baseline (not selected) scores
-  65.1% / 0.480 on RAF-DB and loses less than either pretrained model, and ResNet-18 transfers no better than the
+  65.1% / 0.480 on RAF-DB and loses less accuracy and macro-F1 than either pretrained model, and ResNet-18 transfers no better than the
   tuned CNN (8.7 vs 9.0 points). Tuning the CNN on FER-2013 raised its FER-2013 accuracy (67.6% to 70.2%) but
   lowered its RAF-DB accuracy (65.1% to 61.2%); every CNN change that improved FER-2013 left RAF-DB macro-F1 flat
   or lower (`results/cnn_tuning.md`). The ViT sweep shows the same lack of a link: RAF-DB macro-F1 spans only

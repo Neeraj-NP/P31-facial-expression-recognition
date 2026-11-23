@@ -119,6 +119,8 @@ def main():
                                            output_dict=True, zero_division=0),
     }
 
+    # The fairness audit: on RAF-DB, accuracy and macro-F1 for every gender, race and age group, each with a 95%
+    # bootstrap interval. FER-2013 has no demographic columns, so there the audit table is simply empty.
     audit, gaps = subgroup_audit(df)
     if len(audit):  # only RAF-DB has demographic columns
         audit.to_csv(out / "subgroup_audit.csv", index=False)
@@ -129,6 +131,8 @@ def main():
         json.dump(metrics, f, indent=2, default=str)
 
     # raw counts (aggregate, safe to commit for RAF-DB); src.cross_dataset compares these across datasets
+    # confusion matrix: a 7x7 table where row = true emotion, column = predicted emotion, cell = number of images.
+    # Example (ViT-B on RAF-DB): row "disgust", column "sad" = 57, i.e. 57 of the 160 disgust faces were called sad.
     counts = confusion_matrix(y, p, labels=range(len(CLASSES)))
     pd.DataFrame(counts, index=CLASSES, columns=CLASSES).to_csv(out / "confusion.csv", index_label="true")
     # Confusion matrix picture: rows = true emotion, columns = predicted emotion, normalised so each row sums to 1.

@@ -54,6 +54,8 @@ def main():
     b_acc = d[d[args.attribute] == args.b].groupby("emotion")["ok"].mean()
     a_overall = d[d[args.attribute] == args.a]["ok"].mean() * 100
     b_overall = d[d[args.attribute] == args.b]["ok"].mean() * 100
+    # Result for ResNet-50: men 59.4%, re-weighted to the women's emotion mix 61.5%, so the mix closes only 2.1 of
+    # the 8.1-point gap (about a quarter); the rest is lower accuracy within the same emotions.
     b_reweighted = (b_acc * mix_a).sum() * 100
     gap = a_overall - b_overall
     print(f"\n{args.a}: {a_overall:.1f}%   {args.b}: {b_overall:.1f}%   gap {gap:.1f} pts")

@@ -33,6 +33,9 @@ def class_weights(labels, num_classes):
     # FER-2013 is very imbalanced (happy has ~16x more images than disgust). Without correction the model
     # can score well by mostly predicting the big classes. Inverse-frequency weights make a mistake on a rare
     # class cost more in the loss: weight = total / (num_classes * count_of_that_class).
+    # Worked example with our training split (25,838 images): disgust has 392 images -> weight 25838 / (7 * 392)
+    # ~ 9.4; happy has 6,493 -> weight ~ 0.57. So one disgust mistake costs about 16x more than one happy mistake,
+    # which balances the 16.6x difference in how often they appear. np.maximum(counts, 1) avoids dividing by zero.
     counts = np.bincount(labels, minlength=num_classes).astype(float)
     w = counts.sum() / (num_classes * np.maximum(counts, 1))
     return torch.tensor(w, dtype=torch.float32)
@@ -42,6 +45,11 @@ def class_weights(labels, num_classes):
 def build_optimizer(model, t):
     """AdamW; with train.layer_decay (ViT) earlier blocks get a smaller LR than the head."""
     # AdamW = Adam with proper weight decay (a small penalty on large weights that reduces overfitting).
+    # How Adam works: for every weight it keeps a running average of the gradient (which direction to move) and of
+    # the squared gradient (how large and noisy it is), and steps about `lr` in the averaged direction, smaller for
+    # weights whose gradients are large or noisy. So every weight effectively gets its own step size.
+    # The "W" (decoupled weight decay): every step also shrinks each weight a little (by lr * weight_decay), separately
+    # from the gradient. Smaller weights give a smoother model that overfits less.
     if not t.get("layer_decay"):
         return torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
     # Layer-wise learning-rate decay (used in one ViT tuning run): early layers hold general features, so they
@@ -70,6 +78,9 @@ def run_epoch(model, loader, device, criterion, optimizer=None, scaler=None, sch
         # set_grad_enabled(train): no gradients needed when only evaluating (faster, less memory).
         # autocast: mixed precision (float16 where safe) on GPU, which speeds training up; only on if a scaler exists.
         with torch.set_grad_enabled(train), torch.autocast(device.type, enabled=scaler is not None):
+            # x: [B, C, H, W] images, y: [B] true labels (0..6), logits: [B, 7] raw scores.
+            # Cross-entropy loss = -log(probability the model gives to the TRUE class), averaged over the batch (weighted
+            # by class when class weights are on). Probability 0.9 -> loss 0.11; probability 0.1 -> loss 2.3. Lower is better.
             logits = model(x)
             loss = criterion(logits, y)
         if train:
@@ -84,6 +95,8 @@ def run_epoch(model, loader, device, criterion, optimizer=None, scaler=None, sch
                 optimizer.step()  # update the weights
             # The learning-rate schedule moves forward after EVERY batch, not every epoch.
             scheduler.step()
+        # loss is the batch MEAN, so multiply by the batch size to get the batch SUM; dividing by the total number of
+        # images at the end then gives the exact average loss over the whole epoch.
         total_loss += loss.item() * x.size(0)
         preds.append(logits.argmax(1).cpu())  # predicted class = the output with the highest score
         targets.append(y.cpu())
@@ -91,6 +104,9 @@ def run_epoch(model, loader, device, criterion, optimizer=None, scaler=None, sch
     # Accuracy is reported, but MACRO-F1 (the average F1 over the 7 classes, each class counted equally) is the
     # main metric because accuracy rewards ignoring rare classes on an imbalanced dataset.
     return {
+        # Per class: precision = correct predictions of that class / all predictions of that class;
+        # recall = correct predictions of that class / all true images of that class; F1 = 2 * P * R / (P + R).
+        # Macro-F1 = the plain average of the 7 F1 scores, so rare disgust counts as much as common happy.
         "loss": total_loss / len(targets),
         "acc": accuracy_score(targets, preds),
         "macro_f1": f1_score(targets, preds, average="macro"),
@@ -134,12 +150,18 @@ def main():
         if t.get("class_weights") else None
     # Cross-entropy is the standard classification loss. Label smoothing (e.g. 0.1) softens the "hard" 0/1
     # targets slightly, which stops the model becoming over-confident and helps with FER-2013's noisy labels.
+    # With label_smoothing = 0.1 and 7 classes the target is no longer [0, 0, 0, 1, 0, 0, 0] but 0.9 * one-hot + 0.1 / 7
+    # everywhere: about 0.914 for the true class and 0.014 for each other class.
     criterion = nn.CrossEntropyLoss(weight=weight, label_smoothing=t.get("label_smoothing", 0.0))
     optimizer = build_optimizer(model, t)
 
     # linear warmup then cosine decay, stepped per batch
     # Warmup: start with a tiny learning rate and ramp up, so the first updates do not wreck the pretrained weights.
     # Cosine decay: then lower the rate smoothly to ~0, so the model settles into a good solution at the end.
+    # LambdaLR multiplies the base lr by the lambda's value at step s (s counts batches from 0):
+    #   warmup part (s < warmup): (s + 1) / warmup, rising in a straight line from ~0 to 1 during warmup_epochs;
+    #   cosine part: 0.5 * (1 + cos(pi * progress)), where progress goes 0 -> 1 over the remaining steps, so the
+    #   multiplier falls smoothly from 1 to 0. Example: ViT-B with lr 3e-5 peaks at 3e-5 after epoch 1, ends near 0.
     total_steps = t["epochs"] * len(train_loader)
     warmup = t.get("warmup_epochs", 0) * len(train_loader)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -164,6 +186,8 @@ def main():
         # is never used to choose anything.
         if va["macro_f1"] > best_f1:
             best_f1, patience = va["macro_f1"], 0
+            # state_dict() = a dictionary of every weight tensor, keyed by layer name. The epoch number and the validation
+            # scores are saved with it, so we know later which epoch was kept.
             torch.save({"model": model.state_dict(), "epoch": epoch, "val": va}, out / "best.pt")
         else:
             # Early stopping: if validation macro-F1 has not improved for `early_stop_patience` epochs, stop.

@@ -37,6 +37,8 @@ def vit_reshape(tensor, h=14, w=14):
     # drop CLS token, [B, N, C] -> [B, C, H, W]
     # A ViT outputs a flat list of tokens, not a 2D map. Token 0 is the special CLS token (no position in the image),
     # so we drop it and fold the remaining 14x14 = 196 patch tokens back into a grid that Grad-CAM can use.
+    # Example for ViT-B: [B, 197, 768] -> drop CLS -> [B, 196, 768] -> reshape -> [B, 14, 14, 768]
+    # -> permute (move channels first, as Grad-CAM expects) -> [B, 768, 14, 14].
     return tensor[:, 1:, :].reshape(tensor.size(0), h, w, tensor.size(2)).permute(0, 3, 1, 2)
 
 
@@ -71,6 +73,12 @@ def main():
     ds = FrameDataset(df, build_transforms(d["img_size"], d["channels"], train=False))
 
     # img_size // 16 = patches per side for a ViT with 16x16 patches (224 // 16 = 14).
+    # Grad-CAM step by step, for one image and the predicted class c:
+    #   1. Forward pass; keep the target layer's feature maps A_k (k = channel; e.g. 2048 maps of 4x4 for ResNet-50 at 112px).
+    #   2. Backward pass from the score of class c; get the gradient dScore_c / dA_k for every map.
+    #   3. Average each map's gradient over its pixels -> one weight alpha_k per channel ("how much map k matters for c").
+    #   4. Heat map = ReLU(sum over k of alpha_k * A_k): keep only regions that push the score UP, then resize it to
+    #      the image size and scale to 0..1. The library does all of this; we only choose the layer.
     cam = GradCAM(
         model=model,
         target_layers=[gradcam_target_layer(model, name)],
@@ -92,6 +100,7 @@ def main():
             # targets=None -> explain the class the model actually predicted (not the true label)
             heat = cam(input_tensor=x.unsqueeze(0).to(device), targets=None)[0]
             pred = model(x.unsqueeze(0).to(device)).argmax(1).item()
+            # show_cam_on_image colours the heat map (blue = low, red = high) and blends it half-and-half with the face.
             axes[c, j].imshow(show_cam_on_image(to_display(x, d["channels"]), heat, use_rgb=True))
             # Title reads "true -> predicted", so wrong predictions are easy to spot.
             axes[c, j].set_title(f"{cls} -> {CLASSES[pred]}", fontsize=8)

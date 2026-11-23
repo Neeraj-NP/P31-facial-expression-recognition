@@ -129,6 +129,8 @@ def fer2013_frames(root, val_frac=0.1, seed=42):
     # configuration, so the test set is never used for any choice.
     #   stratify=label  -> every split keeps the same class proportions (important: disgust is ~16x rarer than happy)
     #   random_state=seed -> identical split for every model and every rerun, so models are comparable.
+    # With val_frac = 0.1 the official 28,709 training images become 25,838 train + 2,871 validation;
+    # the 7,178 official test images are kept separate for the final test.
     train, val = train_test_split(
         train_full, test_size=val_frac, stratify=train_full["label"], random_state=seed
     )
@@ -155,6 +157,7 @@ def rafdb_frame(root, split="test"):
     rows = []
     # list_patition_label.txt (the typo is in the dataset itself) lists "<image name> <label>" for every image;
     # image names start with "train_" or "test_", which is how we pick the requested split.
+    # RAF-DB basic has 15,339 images: 12,271 "train_..." and 3,068 "test_...".
     for line in (root / "EmoLabel" / "list_patition_label.txt").read_text().splitlines():
         if not line.strip():
             continue

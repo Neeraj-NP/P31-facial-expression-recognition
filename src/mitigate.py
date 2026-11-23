@@ -44,6 +44,9 @@ def subgroup_sampler(df, attribute):
     roughly 5x more often than their share of the data."""
     # Each image gets weight 1 / (size of its group), so a small group's images are drawn more often and the
     # groups end up equally represented in every epoch. replacement=True lets rare images be seen several times.
+    # Illustration: with 6,000 female, 4,800 male and 600 unsure images, each female image gets weight 1/6000, each
+    # male image 1/4800 and each unsure image 1/600. Every group's weights then add up to 1, so each group is
+    # drawn about a third of the time, whatever its size.
     counts = df[attribute].value_counts()
     weights = df[attribute].map(lambda g: 1.0 / counts[g]).to_numpy()
     return WeightedRandomSampler(weights, num_samples=len(df), replacement=True)

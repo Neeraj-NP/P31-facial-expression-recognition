@@ -8,7 +8,7 @@ python -m src.cross_dataset
 ```
 
 which writes `results/cross_dataset/`: `cross_dataset.md` / `.csv` (overall table), `per_class.csv`,
-`per_class_drop.png`, `confusion_compare.png` and `confusion_shift.csv`. The three selected models are
+`per_class_drop.png`, `confusion_compare.png` and `confusion_shift.csv` (the two figures are not committed). The three selected models are
 `cnn_best`, `resnet50` and `vit` (ViT-B), each chosen on FER-2013 validation macro-F1.
 
 ## 1. Overall: accuracy hides most of the transfer loss
@@ -36,12 +36,12 @@ Bold rows are the configurations selected on FER-2013 validation macro-F1 (`resu
   and ViT-B lose 15.2 and 17.4 points of balanced accuracy, against 21.7 for the CNN, and reach RAF-DB
   macro-F1 0.493 and 0.490 against 0.443. ResNet-50 and ViT-B are within noise of each other. The
   untuned CNN baseline transfers about as well as either (16.5), so this is not a clean "pretraining
-  transfers better" result: tuning the CNN on FER-2013 is what hurt it (see `report/results_and_discussion.md`).
+  transfers better" result: tuning the CNN on FER-2013 is what hurt it (see `results/cnn_tuning.md`).
 - The frozen-backbone model's small drop reflects that it is weak on both datasets, not that it transfers well.
 
 ## 2. Which emotions transfer worst?
 
-![Per-class F1 drop](cross_dataset/per_class_drop.png)
+*Figure (not committed; regenerate with `python -m src.cross_dataset`): `cross_dataset/per_class_drop.png`, the per-emotion F1 drop for the three selected models.*
 
 Per-class F1, FER-2013 -> RAF-DB (change in brackets):
 
@@ -69,7 +69,7 @@ Per-class F1, FER-2013 -> RAF-DB (change in brackets):
 
 ## 3. How the errors change (confusion matrices)
 
-![Confusion matrices: FER-2013, RAF-DB and the difference](cross_dataset/confusion_compare.png)
+*Figure (not committed; regenerate with `python -m src.cross_dataset`): `cross_dataset/confusion_compare.png`, row-normalised confusion matrices on FER-2013, on RAF-DB, and their difference.*
 
 Rows are true labels, normalised to sum to 1. The right column is RAF-DB minus FER-2013: red cells are
 confusions that become more common on RAF-DB. The largest increases (`confusion_shift.csv`):

@@ -97,6 +97,8 @@ def overall_table(evals):
     df = pd.DataFrame(rows)
     # "Drop" = FER-2013 score minus RAF-DB score = how much performance is lost when the model meets new data.
     for k in ("acc", "macro_f1", "bal_acc"):
+        # Example: the untuned CNN's accuracy drops only 2.5 points (67.6% -> 65.1%), but its balanced accuracy drops
+        # 16.5 points, because the classes it gets wrong on RAF-DB are the small ones.
         df[f"{k}_drop"] = df[f"fer_{k}"] - df[f"raf_{k}"]
     return df
 

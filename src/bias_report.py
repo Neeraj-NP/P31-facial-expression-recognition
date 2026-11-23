@@ -44,6 +44,10 @@ def two_proportion_p(acc1, n1, acc2, n2):
     # just by chance?" A small p (e.g. < 0.05) means the gap is unlikely to be pure luck.
     # pooled = the accuracy if the two groups were one; se = the standard error of the difference;
     # the last line converts the z-score |acc1 - acc2| / se into a two-sided p-value (erfc is the normal tail).
+    # Worked example (ResNet-50, gender): women 67.5% of 1,620 images vs men 59.4% of 1,249 images.
+    #   pooled = (0.675 * 1620 + 0.594 * 1249) / 2869 ~ 0.640
+    #   se     = sqrt(0.640 * 0.360 * (1/1620 + 1/1249)) ~ 0.018
+    #   z      = (0.675 - 0.594) / 0.018 ~ 4.5  -> p ~ 8e-6, so a gap this large is very unlikely to be chance.
     pooled = (acc1 * n1 + acc2 * n2) / (n1 + n2)
     se = math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2))
     return math.erfc(abs(acc1 - acc2) / se / math.sqrt(2)) if se else 1.0
@@ -65,6 +69,7 @@ def gap_table(df):
         best = g.loc[g["acc"].idxmax()]
         worst = g.loc[g["acc"].idxmin()]
         # "Separated" = the lower end of the best group's interval is above the upper end of the worst group's.
+        # Example: ResNet-50 women [0.651, 0.698] vs men [0.568, 0.619]: 0.619 < 0.651, so the intervals are separated.
         best_lo, _ = best["acc_ci"]
         _, worst_hi = worst["acc_ci"]
         rows.append({

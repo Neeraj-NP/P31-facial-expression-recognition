@@ -38,6 +38,8 @@ def seed_everything(seed):
     # It makes the experiments reproducible; GPU maths can still differ slightly between machines.
     random.seed(seed)
     np.random.seed(seed)
+    # Q: Why seed 42 and only one seed? A: 42 is an arbitrary fixed value used by every run. One seed per run was
+    #    all our compute allowed, which is why we call differences of about one point noise (see the limitations).
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
@@ -80,6 +82,8 @@ def make_loader(cfg, df, train, sampler=None):
         # (a DataLoader cannot use both at once).
         shuffle=train and sampler is None,
         sampler=sampler,
+        # Q: What is num_workers? A: The number of background processes that load and transform images in parallel,
+        #    so the GPU does not wait for the disk. It changes speed only, never the results.
         num_workers=d["num_workers"],
         # pin_memory makes copying batches to the GPU faster.
         pin_memory=torch.cuda.is_available(),

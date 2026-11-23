@@ -51,6 +51,10 @@ def build_optimizer(model, t):
     # The "W" (decoupled weight decay): every step also shrinks each weight a little (by lr * weight_decay), separately
     # from the gradient. Smaller weights give a smoother model that overfits less.
     if not t.get("layer_decay"):
+        # Q: Why AdamW and not SGD? A: It works well with little tuning for both CNNs and transformers and is the standard
+        #    choice for fine-tuning ViTs, so one optimiser serves all three families.
+        # Q: Why such different learning rates (CNN 1e-3, ResNet 3e-4, ViT 3e-5)? A: The CNN learns from random weights and
+        #    needs big steps; pretrained models only need adjusting, and transformers are easily damaged by large updates.
         return torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
     # Layer-wise learning-rate decay (used in one ViT tuning run): early layers hold general features, so they
     # get a smaller learning rate than the later layers and the new head.
@@ -94,6 +98,8 @@ def run_epoch(model, loader, device, criterion, optimizer=None, scaler=None, sch
                 loss.backward()   # compute gradients
                 optimizer.step()  # update the weights
             # The learning-rate schedule moves forward after EVERY batch, not every epoch.
+            # Q: Why step the scheduler every batch, not every epoch? A: Warmup lasts only 1-2 epochs, so it needs per-step
+            #    granularity to rise smoothly instead of jumping.
             scheduler.step()
         # loss is the batch MEAN, so multiply by the batch size to get the batch SUM; dividing by the total number of
         # images at the end then gives the exact average loss over the whole epoch.
@@ -146,6 +152,8 @@ def main():
                         in_channels=cfg["data"]["channels"], **model_kwargs(m)).to(device)
 
     # Class weights are computed from the TRAINING labels only (never from validation/test) and are optional.
+    # Q: Why compute the weights from the training labels only? A: Using validation or test labels would leak
+    #    information from data that must stay unseen.
     weight = class_weights(frames["train"]["label"].values, m["num_classes"]).to(device) \
         if t.get("class_weights") else None
     # Cross-entropy is the standard classification loss. Label smoothing (e.g. 0.1) softens the "hard" 0/1
@@ -170,6 +178,8 @@ def main():
         else 0.5 * (1 + math.cos(math.pi * (s - warmup) / max(1, total_steps - warmup))),
     )
     # Mixed-precision scaler only exists on a CUDA GPU (it is not used on CPU).
+    # Q: Why mixed precision (AMP)? A: On the Kaggle T4 it uses less memory and trains faster, which matters for ViT-B
+    #    (86M parameters; one run with evaluation and Grad-CAM took about 93 minutes). GradScaler keeps it numerically safe.
     scaler = torch.amp.GradScaler() if t.get("amp", True) and device.type == "cuda" else None
 
     best_f1, patience, history = -1.0, 0, []
@@ -184,6 +194,10 @@ def main():
 
         # Model selection: keep only the weights of the epoch with the best VALIDATION macro-F1. The test set
         # is never used to choose anything.
+        # Q: Why keep the best epoch and not the last? A: Late epochs usually overfit (train accuracy keeps rising while
+        #    validation stalls), so the epoch with the best validation macro-F1 generalises best.
+        # Q: Why select on macro-F1 and not validation loss? A: Macro-F1 is the metric we report; with label smoothing and
+        #    class weights the loss can rise while macro-F1 still improves.
         if va["macro_f1"] > best_f1:
             best_f1, patience = va["macro_f1"], 0
             # state_dict() = a dictionary of every weight tensor, keyed by layer name. The epoch number and the validation
@@ -193,6 +207,8 @@ def main():
             # Early stopping: if validation macro-F1 has not improved for `early_stop_patience` epochs, stop.
             # The model has started to overfit (train score keeps rising, validation does not).
             patience += 1
+            # Q: Why different patience per model (CNN 12-15, ResNet-50 8, ViT 5)? A: The CNN improves slowly over many epochs;
+            #    the ViT overfits within a few epochs, so waiting longer only wastes GPU time.
             if patience >= t.get("early_stop_patience", 10):
                 print("early stopping")
                 break

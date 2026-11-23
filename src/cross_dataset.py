@@ -75,6 +75,8 @@ def load_eval(run, dataset):
         cm = pd.read_csv(d / "confusion.csv", index_col=0).loc[CLASSES, CLASSES].values.astype(float)
         if cm.sum() > 2 * len(CLASSES):  # counts -> row-normalised; files already normalised are used as-is
             # Divide each row by its total so a cell reads "of the true <row> faces, this share was predicted <column>".
+            # Q: Why normalise each row? A: The classes have very different sizes (RAF-DB: 74 fear vs 1,185 happy); rates make
+            #    rows comparable, and the diagonal then equals per-class recall.
             cm = cm / cm.sum(1, keepdims=True)
     return m, cm
 
@@ -88,6 +90,8 @@ def overall_table(evals):
         # Balanced accuracy = the mean per-class recall (sklearn calls it the "macro avg" recall). Unlike plain
         # accuracy it is NOT inflated when one class dominates: RAF-DB is 39% happy, so a model that is good only at
         # "happy" still gets a decent plain accuracy but a poor balanced accuracy.
+        # Q: Why report both balanced accuracy and macro-F1? A: Balanced accuracy is recall only (does the model find each
+        #    emotion?); macro-F1 also penalises false alarms (precision), e.g. the tuned CNN calling 484 faces angry.
         bal = lambda m: m["per_class"]["macro avg"]["recall"]  # noqa: E731  (mean per-class recall)
         rows.append({
             "run": Path(run).name, "model": label(run),

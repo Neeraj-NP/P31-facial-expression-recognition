@@ -50,6 +50,9 @@ def main():
     # Re-weighting: take group B's accuracy for each emotion, but weight the emotions by group A's mix.
     # That is the accuracy B WOULD have if it had A's emotion mix. Whatever gap remains afterwards is NOT explained
     # by the emotion mix, so it is a within-emotion difference.
+    # Q: Why re-weight men's accuracy to the women's mix and not the reverse? A: Either direction works (it is a
+    #    standardisation); we use the better-scoring group as the reference so the result reads as "how much of
+    #    the gap would close if men showed the same emotions as women".
     mix_a = d[d[args.attribute] == args.a]["emotion"].value_counts(normalize=True)
     b_acc = d[d[args.attribute] == args.b].groupby("emotion")["ok"].mean()
     a_overall = d[d[args.attribute] == args.a]["ok"].mean() * 100

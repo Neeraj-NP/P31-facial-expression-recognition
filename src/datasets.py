@@ -20,6 +20,8 @@ from torchvision import transforms
 # Canonical label order used everywhere in the project.
 # WHY: the model outputs a number 0..6, so every dataset must map its emotion names to the SAME numbers,
 # otherwise "happy" in one dataset could be scored as "surprise" in the other without any error message.
+# Q: Why these 7 emotions? A: They are FER-2013's 7 classes, and RAF-DB's basic set has the same 7, so both
+#    datasets share one label space and a model trained on one can be scored directly on the other.
 CLASSES = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASSES)}
 
@@ -61,9 +63,12 @@ def build_transforms(img_size: int, channels: int, train: bool, augment: bool = 
     if train_aug:
         ops += [
             # Mirror image: a face flipped left/right is still the same emotion -> free extra data.
+            # Q: Why no vertical flip? A: Upside-down faces do not occur in real photos, so it would teach unrealistic patterns.
             transforms.RandomHorizontalFlip(),
             # Small rotation / shift / zoom: mimics different head poses and crops, so the model does not
             # memorise exact face positions.
+            # Q: Why only 10 degrees and 10% shift? A: Larger changes would push the mouth or eyes out of a 48x48 crop and
+            #    change how the expression looks; small changes add variety without destroying the label.
             transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
             # Brightness/contrast jitter: mimics different lighting. (Only these two because the image is grey.)
             transforms.ColorJitter(brightness=0.3, contrast=0.3),
@@ -79,6 +84,8 @@ def build_transforms(img_size: int, channels: int, train: bool, augment: bool = 
     if train_aug and erasing > 0:
         # Randomly blanks a rectangle: forces the model not to rely on one facial region and to cope with
         # occlusion (hands, glasses, hair). Applied after normalisation, with probability `erasing`.
+        # Q: Is random erasing used in the final CNN? A: No. cnn_best sets random_erasing: 0.0 ("lighter regularisation"),
+        #    because the baseline CNN was under-fitting; the pretrained models keep the default 0.25.
         ops.append(transforms.RandomErasing(p=erasing))
     return transforms.Compose(ops)
 
@@ -124,6 +131,10 @@ def fer2013_frames(root, val_frac=0.1, seed=42):
         ]
         return pd.DataFrame(rows)
 
+    # Q: Why take validation from the training set instead of using the test set? A: Anything used to make a choice
+    #    (best epoch, best config) can no longer give an unbiased score, so the 7,178 test images are kept for the end.
+    # Q: Why 10%? A: 2,871 images is enough for a stable overall macro-F1 while keeping 90% for training. Its weak spot
+    #    is disgust: only 44 validation images, so that class's validation score is noisy.
     train_full, test = scan("train"), scan("test")
     # A validation set is carved out of the TRAINING data (10%). We use it to pick the best epoch and the best
     # configuration, so the test set is never used for any choice.
@@ -167,6 +178,8 @@ def rafdb_frame(root, split="test"):
         stem = Path(name).stem
         row = {
             # We use the "aligned" images (faces already cropped and aligned by the dataset authors).
+            # Q: Why the aligned images and not the originals? A: Aligned images are cropped tightly around the face like
+            #    FER-2013's, while the originals contain background, so aligned images make the comparison fairer.
             "path": str(root / "Image" / "aligned" / f"{stem}_aligned.jpg"),
             # Translate RAF-DB's label numbering into our shared label order.
             "label": RAFDB_TO_IDX[int(label)],

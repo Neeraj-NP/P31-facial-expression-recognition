@@ -45,6 +45,9 @@ def predict(model, loader, device):
 
 # INPUT: true labels, predicted labels, a metric function.  RETURNS: (low, high) of the 95% interval.
 # GOES TO: subgroup_audit(), and finally the acc_ci columns of subgroup_audit.csv.
+# Q: Why 1000 bootstrap resamples? A: A common choice that gives stable 2.5th and 97.5th percentiles at low cost;
+#    the fixed seed makes the intervals reproducible.
+# Q: Why bootstrap and not a formula? A: It works for any metric, including macro-F1, which has no simple formula.
 def bootstrap_ci(y, p, metric, n=1000, seed=0):
     """95% bootstrap confidence interval for a metric(y_true, y_pred)."""
     # Bootstrap = resample the test images WITH replacement 1000 times, recompute the metric each time, and take
@@ -108,6 +111,8 @@ def main():
     out.mkdir(exist_ok=True)
     # Per-image predictions. Kept local only: for RAF-DB they are per-image labels, which the dataset
     # licence does not allow us to publish (hence predictions.csv is gitignored).
+    # Q: Why are per-image predictions not in the repo? A: For RAF-DB they reveal per-image labels, and the RAF-DB
+    #    licence forbids redistribution; only aggregate numbers (metrics, confusion counts, group tables) are committed.
     df.to_csv(out / "predictions.csv", index=False)
 
     y, p = df["label"].values, df["pred"].values

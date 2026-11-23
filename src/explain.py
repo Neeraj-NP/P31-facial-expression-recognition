@@ -89,15 +89,21 @@ def main():
     out.mkdir(exist_ok=True)
 
     # grid: rows = classes, cols = examples (CAM for the predicted class)
+    # Q: Why only 4 images per emotion (28 in total)? A: It keeps the grid readable for a qualitative comparison;
+    #    that small sample is why we make no quantitative claim about attention.
     k = args.per_class
     fig, axes = plt.subplots(len(CLASSES), k, figsize=(2 * k, 2 * len(CLASSES)), squeeze=False)
     # Fixed seed -> the SAME images are drawn for every model, so the grids can be compared side by side.
+    # Q: Why are the ViT maps more diffuse than the ResNet maps? A: Partly the model, but partly the method: the ViT
+    #    map comes from a 14x14 token grid of a LayerNorm output, not from a convolutional feature map.
     rng = np.random.default_rng(0)
     for c, cls in enumerate(CLASSES):
         ids = df.index[df["label"] == c].to_numpy()
         for j, i in enumerate(rng.choice(ids, size=min(k, len(ids)), replace=False)):
             x, _, _ = ds[i]
             # targets=None -> explain the class the model actually predicted (not the true label)
+            # Q: Why explain the predicted class and not the true label? A: We want to see what the model actually used;
+            #    for a wrong prediction this shows what pulled it towards the wrong emotion.
             heat = cam(input_tensor=x.unsqueeze(0).to(device), targets=None)[0]
             pred = model(x.unsqueeze(0).to(device)).argmax(1).item()
             # show_cam_on_image colours the heat map (blue = low, red = high) and blends it half-and-half with the face.

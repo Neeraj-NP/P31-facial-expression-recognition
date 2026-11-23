@@ -49,6 +49,8 @@ def subgroup_sampler(df, attribute):
     # drawn about a third of the time, whatever its size.
     counts = df[attribute].value_counts()
     weights = df[attribute].map(lambda g: 1.0 / counts[g]).to_numpy()
+    # Q: Why sample with replacement? A: To draw small groups as often as large ones, their images must be allowed to
+    #    appear several times per epoch; num_samples=len(df) keeps the epoch length the same as normal training.
     return WeightedRandomSampler(weights, num_samples=len(df), replacement=True)
 
 
@@ -60,6 +62,8 @@ def main():
     ap.add_argument("--balance-by", choices=["gender", "race", "age", "none"], default="gender",
                     help="'none' = same fine-tuning with ordinary shuffling, the control for the balancing effect")
     ap.add_argument("--epochs", type=int, default=10)
+    # Q: Why such a low learning rate (1e-5)? A: The model is already trained; a large rate would overwrite what it
+    #    learned on FER-2013 instead of adapting it to RAF-DB.
     ap.add_argument("--lr", type=float, default=1e-5, help="low LR: fine-tuning, not retraining from scratch")
     ap.add_argument("--val-frac", type=float, default=0.15)
     args = ap.parse_args()
@@ -88,6 +92,10 @@ def main():
     train_loader = make_loader(cfg, train_df, train=True, sampler=sampler)
     val_loader = make_loader(cfg, val_df, train=False)
 
+    # Q: Why no class weights here? A: The control and the balanced runs must differ ONLY in the sampler; using the
+    #    same plain loss for all of them keeps the comparison fair.
+    # Q: Why does FER-2013 accuracy fall ~7 points after fine-tuning? A: The model adapts to RAF-DB and partly forgets
+    #    FER-2013 (catastrophic forgetting), the price of adapting to the target data.
     criterion = nn.CrossEntropyLoss(label_smoothing=cfg["train"].get("label_smoothing", 0.0))
     # Very low learning rate (1e-5): gently ADAPT the existing model to RAF-DB instead of retraining it.
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=cfg["train"]["weight_decay"])

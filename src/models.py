@@ -14,6 +14,8 @@ from torchvision import models
 # WHAT: the from-scratch baseline network.
 # INPUT (forward): a batch of 1-channel 48x48 images.  RETURNS: 7 raw scores (logits), one per emotion.
 # WHY IT EXISTS: it shows what pretraining adds when compared with the ResNet and the ViT.
+# Q: Why a small VGG-style CNN and not a deeper one? A: The images are only 48x48 and there are ~26k training
+#    images; ~5M parameters is enough to fit them, and a much deeper network trained from scratch would overfit.
 class SimpleCNN(nn.Module):
     """VGG-style CNN for 48x48 grayscale faces (~5M params)."""
 
@@ -50,6 +52,9 @@ class SimpleCNN(nn.Module):
         # size and adds no parameters), then a small 512 -> 256 -> 7 classifier. 7 = number of emotions.
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d(1), nn.Flatten(),
+            # Q: Why dropout 0.4 here but 0.25 in the blocks (0.2 / 0.1 in cnn_best)? A: The defaults regularise the
+            #    classifier more; tuning showed the baseline under-fitted, so cnn_best lowers both and trains longer
+            #    (together: validation macro-F1 0.653 -> 0.676).
             nn.Linear(512, 256), nn.ReLU(inplace=True), nn.Dropout(dropout),
             nn.Linear(256, num_classes),
         )
@@ -90,6 +95,10 @@ def build_model(name, num_classes=7, pretrained=True, **kwargs):
         # Replace ImageNet's 1000-class output layer with our own: dropout (regularisation) + a linear layer
         # for 7 emotions. This new layer is created AFTER the freezing loop, so it stays trainable.
         # m.fc.in_features = size of the feature vector after global average pooling: 512 for ResNet-18, 2048 for ResNet-50.
+        # Q: Why not keep ImageNet's head? A: It predicts 1000 ImageNet classes; we need 7 emotions, so a new head is
+        #    trained from scratch while the backbone is fine-tuned.
+        # Q: Why 112x112 input for ResNet and not 224? A: The faces are 48x48 to begin with, so 224 adds no detail and
+        #    costs 4x the compute. We tried 224 (resnet_224): +1.2 points on FER-2013, no clear benefit on RAF-DB.
         m.fc = nn.Sequential(nn.Dropout(0.3), nn.Linear(m.fc.in_features, num_classes))
         if kwargs.get("freeze_backbone"):
             # frozen BatchNorm layers must stay in eval mode, otherwise their running stats keep drifting
@@ -120,6 +129,10 @@ def build_model(name, num_classes=7, pretrained=True, **kwargs):
         #      on the mouth can use information from a patch on the eyes; then a small MLP processes each token.
         #   4. The final CLS token summarises the whole image, and the new 7-way head turns it into emotion scores.
         # Sizes: ViT-B ~86M parameters, ViT-S ~22M.
+        # Q: Why is the ViT run at 224x224? A: Its pretrained position embeddings were learned for a 14x14 patch grid
+        #    (224 / 16); another size would need them resized and would move further from the pretrained model.
+        # Q: Why ViT-B over ViT-S? A: Highest FER-2013 validation macro-F1 (0.679 vs 0.669 for the best ViT-S); the margin
+        #    is within one-seed noise, and on the FER-2013 test set the best ViT-S is not worse (0.682 vs 0.679).
         m = timm.create_model(name, pretrained=pretrained, num_classes=num_classes)
         n_freeze = kwargs.get("freeze_blocks", 0)
         if n_freeze:

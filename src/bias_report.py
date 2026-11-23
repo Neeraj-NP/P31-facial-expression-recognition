@@ -38,6 +38,10 @@ def load_audit(run_dir, dataset):
 
 # INPUT: accuracy and number of images for two groups.  RETURNS: a two-sided p-value between 0 and 1.
 # GOES TO: gap_table(), which stores it in the p_value column.
+# Q: Why a z-test and not a chi-square test? A: For two groups and correct/wrong they are equivalent (chi-square
+#    = z squared); the z-test is the simpler one to explain.
+# Q: Is the p-value corrected for multiple comparisons? A: No. We pick the best and worst of several groups and
+#    test many model/attribute pairs, so p is optimistic; that is why ViT-B's race p = 0.04 is called unclear.
 def two_proportion_p(acc1, n1, acc2, n2):
     """Two-sided p-value of a pooled two-proportion z-test between two groups' accuracies."""
     # Question answered: "if both groups truly had the same accuracy, how likely is a difference this big
@@ -63,9 +67,13 @@ def gap_table(df):
       the best and worst groups being picked out of several, so both flatter the gap a little."""
     rows = []
     # "unsure" (n=199) is not a gender group in the female-vs-male comparison; it stays in the per-group tables
+    # Q: Why leave "unsure" out of the gender gap? A: It is not a gender group but a label the annotators could not
+    #    decide (199 images), so the gap is defined as female vs male.
     df = df[~((df["attribute"] == "gender") & (df["group"] == "unsure"))]
     for (model, attribute), g in df.groupby(["model", "attribute"]):
         # The gap is between the highest- and lowest-scoring group of each attribute.
+        # Q: Why measure best minus worst group? A: It is the simplest summary of how unequal the groups are; the full
+        #    per-group table with intervals is kept in combined_subgroup_audit.csv.
         best = g.loc[g["acc"].idxmax()]
         worst = g.loc[g["acc"].idxmin()]
         # "Separated" = the lower end of the best group's interval is above the upper end of the worst group's.
